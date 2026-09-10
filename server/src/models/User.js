@@ -60,6 +60,7 @@ const userSchema = new mongoose.Schema(
     },
     verificationDocumentStatus: {
       type: String,
+      enum: ['none', 'submitted', 'approved', 'rejected'],
       default: 'none',
     },
 

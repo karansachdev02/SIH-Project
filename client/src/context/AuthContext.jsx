@@ -50,6 +50,18 @@ export const AuthProvider = ({ children }) => {
     setPendingFarmer(null)
   }
 
+  /**
+   * updateUser — update the stored user object after a profile edit.
+   * Merges the returned safe user fields into existing user state and
+   * persists to localStorage so the update survives a page refresh.
+   * Does NOT touch the JWT token or authentication state.
+   */
+  const updateUser = (updatedUserData) => {
+    const merged = { ...user, ...updatedUserData }
+    localStorage.setItem('smartmandi_user', JSON.stringify(merged))
+    setUser(merged)
+  }
+
   const setPendingFarmerState = (farmerData) => {
     // Clear any existing authenticated session
     localStorage.removeItem('smartmandi_token')
@@ -71,6 +83,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         logout,
+        updateUser,
         setPendingFarmerState,
       }}
     >

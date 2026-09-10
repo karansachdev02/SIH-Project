@@ -21,6 +21,7 @@ import Button from '../../components/common/Button'
 import RoleSelection from './RoleSelection'
 import LanguageSelector from '../../components/common/LanguageSelector'
 import { sendFarmerOtp, verifyFarmerOtp, registerFarmer, registerBuyer } from '../../services/authService'
+import { uploadFarmerDocument } from '../../services/verificationService'
 import { useAuth } from '../../context/AuthContext'
 
 const INDIAN_LANGUAGES = [
@@ -40,8 +41,11 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
   const [role, setRole] = useState('farmer')
   const [currentStep, setCurrentStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
+  const [uploadingDoc, setUploadingDoc] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [uploadErrorMsg, setUploadErrorMsg] = useState('')
   const [farmerSuccess, setFarmerSuccess] = useState(null)
+  const [docSubmitted, setDocSubmitted] = useState(false)
   const [buyerSuccess, setBuyerSuccess] = useState(null)
 
   // OTP Verification States
@@ -65,7 +69,9 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
     district: '',
     village: '',
     mobileVerificationToken: '',
+    documentFile: null,
     documentName: null,
+    documentType: 'farmer_id',
   })
 
   // Buyer form state
@@ -195,16 +201,33 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
     }
   }
 
+  const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
+  const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
+
   const handleFileUpload = (e) => {
+    setErrorMsg('')
     const file = e.target.files?.[0]
-    if (file) {
-      setFarmerForm((prev) => ({ ...prev, documentName: file.name }))
+    if (!file) return
+
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      setErrorMsg('केवल PDF, JPG, JPEG और PNG फ़ाइलें समर्थित हैं / Only PDF, JPG, JPEG and PNG files are allowed')
+      e.target.value = ''
+      return
     }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorMsg('फ़ाइल का आकार 5MB से अधिक नहीं होना चाहिए / File size must not exceed 5MB')
+      e.target.value = ''
+      return
+    }
+
+    setFarmerForm((prev) => ({ ...prev, documentFile: file, documentName: file.name }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setErrorMsg('')
+    setUploadErrorMsg('')
 
     if (!validateCurrentStep()) return
 
@@ -224,8 +247,37 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
         }
 
         const res = await registerFarmer(payload)
-        setFarmerSuccess(res.user || res)
-        if (onFarmerRegistered) onFarmerRegistered(res.user || res)
+        const registeredUser = res.user || res
+        const verificationSessionToken = res.verificationSessionToken
+
+        // Registration succeeded — now upload document if one was selected
+        setFarmerSuccess(registeredUser)
+        setSubmitting(false)
+
+        if (verificationSessionToken && farmerForm.documentFile) {
+          setUploadingDoc(true)
+          try {
+            await uploadFarmerDocument(
+              farmerForm.documentFile,
+              farmerForm.documentType,
+              verificationSessionToken
+            )
+            setDocSubmitted(true)
+          } catch (uploadErr) {
+            // Registration succeeded but upload failed — show clear error, keep farmerSuccess set
+            setUploadErrorMsg(
+              uploadErr.message ||
+              'पंजीकरण सफल हुआ, लेकिन दस्तावेज़ अपलोड विफल रहा। कृपया लॉगिन करके पुनः प्रयास करें। / Registration succeeded but document upload failed. Please retry after logging in.'
+            )
+          } finally {
+            setUploadingDoc(false)
+          }
+        } else {
+          setDocSubmitted(false)
+        }
+
+        if (onFarmerRegistered) onFarmerRegistered(registeredUser)
+        return
       } else {
         const payload = {
           name: buyerForm.name.trim(),
@@ -270,33 +322,82 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
         {/* FARMER REGISTRATION SUCCESS */}
         {farmerSuccess ? (
           <div className="text-center py-6 space-y-5">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
-              <Clock size={36} />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-extrabold text-emerald-950">
-                आपका पंजीकरण सत्यापन के लिए भेज दिया गया है
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 max-w-md mx-auto font-medium">
-                खाता सक्रिय होने के बाद आप लॉगिन कर सकेंगे
-              </p>
-            </div>
+            {uploadingDoc ? (
+              /* Document upload in progress */
+              <>
+                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm animate-pulse">
+                  <Upload size={36} />
+                </div>
+                <h2 className="text-xl font-extrabold text-emerald-950">
+                  दस्तावेज़ अपलोड हो रहा है… / Uploading document…
+                </h2>
+              </>
+            ) : docSubmitted ? (
+              /* Registration + document upload both succeeded */
+              <>
+                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
+                  <CheckCircle2 size={36} />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-extrabold text-emerald-950">
+                    दस्तावेज़ सफलतापूर्वक जमा किया गया / Document Submitted
+                  </h2>
+                  <p className="text-sm sm:text-base text-slate-600 max-w-md mx-auto font-medium">
+                    आपका खाता प्रशासन समीक्षा के बाद सक्रिय होगा
+                  </p>
+                </div>
 
-            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm max-w-md mx-auto text-left space-y-1">
-              <p className="font-bold flex items-center gap-1.5">
-                <ShieldCheck size={18} className="text-amber-700" />
-                <span>सत्यापन स्थिति: लंबित (Pending Verification)</span>
-              </p>
-              <p className="text-amber-800">
-                नाम: <strong>{farmerSuccess.name}</strong> | मोबाइल: <strong>{farmerSuccess.mobile}</strong>
-              </p>
-            </div>
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm max-w-md mx-auto text-left space-y-1">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <ShieldCheck size={18} className="text-emerald-700" />
+                    <span>स्थिति: दस्तावेज़ समीक्षा में (Document Under Review)</span>
+                  </p>
+                  <p className="text-emerald-800">
+                    नाम: <strong>{farmerSuccess.name}</strong> | मोबाइल: <strong>{farmerSuccess.mobile}</strong>
+                  </p>
+                </div>
+              </>
+            ) : (
+              /* Registration succeeded but document upload failed or no document */
+              <>
+                <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-sm">
+                  <Clock size={36} />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-extrabold text-emerald-950">
+                    पंजीकरण सफल, सत्यापन लंबित / Registration Successful
+                  </h2>
+                  <p className="text-sm sm:text-base text-slate-600 max-w-md mx-auto font-medium">
+                    खाता सक्रिय होने के बाद आप लॉगिन कर सकेंगे
+                  </p>
+                </div>
 
-            <div className="pt-4 flex justify-center">
-              <Button variant="primary" size="md" onClick={onSwitchToLogin}>
-                <span>लॉगिन पृष्ठ पर जाएं / Go to Login</span>
-              </Button>
-            </div>
+                {uploadErrorMsg && (
+                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-semibold flex items-start gap-2.5 max-w-md mx-auto text-left">
+                    <AlertCircle size={18} className="text-rose-600 shrink-0 mt-0.5" />
+                    <span>{uploadErrorMsg}</span>
+                  </div>
+                )}
+
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm max-w-md mx-auto text-left space-y-1">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <ShieldCheck size={18} className="text-amber-700" />
+                    <span>सत्यापन स्थिति: लंबित (Pending Verification)</span>
+                  </p>
+                  <p className="text-amber-800">
+                    नाम: <strong>{farmerSuccess.name}</strong> | मोबाइल: <strong>{farmerSuccess.mobile}</strong>
+                  </p>
+                </div>
+              </>
+            )}
+
+            {!uploadingDoc && (
+              <div className="pt-4 flex justify-center">
+                <Button variant="primary" size="md" onClick={onSwitchToLogin}>
+                  <span>लॉगिन पृष्ठ पर जाएं / Go to Login</span>
+                </Button>
+              </div>
+            )}
           </div>
         ) : buyerSuccess ? (
           /* BUYER REGISTRATION SUCCESS */
@@ -618,19 +719,19 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
                         <input
                           id="farmer-doc-upload"
                           type="file"
-                          accept=".pdf,.jpg,.png"
+                          accept=".pdf,.jpg,.jpeg,.png"
                           onChange={handleFileUpload}
                           className="hidden"
                         />
                         <label htmlFor="farmer-doc-upload" className="cursor-pointer flex flex-col items-center">
-                          <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
-                            <Upload size={24} />
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 ${farmerForm.documentFile ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-700'}`}>
+                            {farmerForm.documentFile ? <CheckCircle2 size={24} /> : <Upload size={24} />}
                           </div>
                           <span className="text-base font-bold text-emerald-900">
                             {farmerForm.documentName || 'दस्तावेज़ चुनें / Choose Document'}
                           </span>
                           <span className="text-xs text-slate-500 mt-1">
-                            समर्थित फ़ाइल: PDF, JPG, PNG (अधिकतम 5MB)
+                            समर्थित फ़ाइल: PDF, JPG, JPEG, PNG (अधिकतम 5MB)
                           </span>
                         </label>
                       </div>

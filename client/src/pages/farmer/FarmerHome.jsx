@@ -1,170 +1,305 @@
-import React from 'react'
+import { useState, useEffect } from 'react'
 import Card from '../../components/common/Card'
-import Button from '../../components/common/Button'
+import MarketPriceCard from '../../components/common/MarketPriceCard'
+import { getMarketPrices } from '../../services/marketPriceService'
 import {
   Sprout,
   Wheat,
-  TrendingUp,
-  ShoppingCart,
   Truck,
   Bot,
   Lightbulb,
-  Clock,
-  ArrowUpRight,
-  PlusCircle,
+  CheckCircle2,
+  MapPin,
+  Phone,
+  ChevronRight,
+  Loader2,
+  Cloud,
+  ClipboardList,
+  UserCircle,
 } from 'lucide-react'
 
 /**
- * Isolated demo data for Price Discovery UI demonstration.
- * Structured cleanly to be replaced by API / backend data in future iterations.
- */
-const demoMarketData = {
-  crop: 'गेहूं',
-  price: '₹2,450',
-  unit: 'क्विंटल',
-  trend: '+3.2%',
-  updated: 'आज अपडेट',
-}
-
-/**
- * Primary Farmer Action Grid Configuration
+ * Action cards for the farmer dashboard.
+ * `available: false` marks features not yet implemented.
  */
 const ACTION_ITEMS = [
   {
     id: 'my-crops',
     title: 'मेरी फसल',
-    ariaLabel: 'मेरी फसल देखें या प्रबंधित करें / View My Crops',
+    ariaLabel: 'मेरी फसल देखें / My Crops',
     icon: Wheat,
     color: 'bg-amber-100 text-amber-800 border-amber-200',
+    available: true,
   },
   {
-    id: 'buyers',
-    title: 'खरीदार',
-    ariaLabel: 'पास के खरीदार खोजें / Find Buyers',
-    icon: ShoppingCart,
+    id: 'booking-requests',
+    title: 'बुकिंग',
+    ariaLabel: 'बुकिंग अनुरोध / Booking Requests',
+    icon: ClipboardList,
     color: 'bg-blue-100 text-blue-800 border-blue-200',
+    available: true,
+  },
+  {
+    id: 'price-prediction',
+    title: 'AI भाव',
+    ariaLabel: 'AI मूल्य भविष्यवाणी / AI Price Prediction',
+    icon: Bot,
+    color: 'bg-violet-100 text-violet-800 border-violet-200',
+    available: true,
+  },
+  {
+    id: 'weather',
+    title: 'मौसम',
+    ariaLabel: 'मौसम / Weather',
+    icon: Cloud,
+    color: 'bg-sky-100 text-sky-800 border-sky-200',
+    available: true,
+  },
+  {
+    id: 'profile',
+    title: 'प्रोफ़ाइल',
+    ariaLabel: 'मेरी प्रोफ़ाइल / My Profile',
+    icon: UserCircle,
+    color: 'bg-slate-100 text-slate-700 border-slate-200',
+    available: true,
   },
   {
     id: 'transport',
     title: 'ट्रांसपोर्ट',
-    ariaLabel: 'परिवहन सेवाएं देखें / Find Transport',
+    ariaLabel: 'परिवहन सेवाएं / Transport — जल्द आ रहा है',
     icon: Truck,
     color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  },
-  {
-    id: 'ai-assistant',
-    title: 'AI सहायक',
-    ariaLabel: 'स्मार्ट AI सहायक से पूछें / Ask AI Assistant',
-    icon: Bot,
-    color: 'bg-purple-100 text-purple-800 border-purple-200',
+    available: false,
   },
 ]
 
 /**
- * Farmer Home Dashboard Component for Smart Mandi.
+ * Farmer Home Dashboard.
+ *
+ * Props:
+ *   user       — authenticated farmer object from AuthContext (may be null for unauthenticated visitors)
+ *   onNavigate — (viewKey: string) => void  callback into App.jsx currentView system
  */
-export default function FarmerHome() {
+export default function FarmerHome({ user, onNavigate }) {
+  const [comingSoonId, setComingSoonId] = useState(null)
+
+  // ── Market price state ────────────────────────────────────────────────────
+  const [priceData, setPriceData]     = useState(null)   // first price record
+  const [priceSource, setPriceSource] = useState(null)   // 'data.gov.in' | 'fallback'
+  const [priceLoading, setPriceLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await getMarketPrices({ commodity: 'Wheat', limit: 1 })
+        if (!cancelled) {
+          setPriceData(res.prices?.[0] ?? null)
+          setPriceSource(res.source ?? null)
+        }
+      } catch {
+        // API unavailable — leave priceData null, fallback shown below
+        if (!cancelled) setPriceSource('fallback')
+      } finally {
+        if (!cancelled) setPriceLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  // Derive display values safely — gracefully handle missing fields
+  const farmerName = user?.name || 'किसान'
+  const mobile = user?.mobile || null
+  const state = user?.state || null
+  const district = user?.district || null
+  const village = user?.village || null
+  const verificationStatus = user?.verificationStatus || null
+  const isVerified = verificationStatus === 'verified'
+
+  // Location string — show only filled fields
+  const locationParts = [village, district, state].filter(Boolean)
+  const locationString = locationParts.length > 0 ? locationParts.join(', ') : null
+
+  const handleComingSoon = (id) => {
+    setComingSoonId(id)
+    setTimeout(() => setComingSoonId(null), 2200)
+  }
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* 1. GREETING SECTION */}
-      <section aria-labelledby="greeting-heading" className="flex items-center justify-between bg-white rounded-2xl p-5 border border-emerald-100/80 shadow-xs">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h1 id="greeting-heading" className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              नमस्ते किसान
-            </h1>
-            <span className="text-2xl" role="img" aria-label="waving hand">👋</span>
+
+      {/* ── 1. WELCOME / IDENTITY SECTION ───────────────────────────────── */}
+      <section
+        aria-labelledby="greeting-heading"
+        className="bg-white rounded-2xl p-5 border border-emerald-100/80 shadow-xs"
+      >
+        <div className="flex items-start justify-between gap-4">
+          {/* Left: name + status */}
+          <div className="space-y-2 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1
+                id="greeting-heading"
+                className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight"
+              >
+                नमस्ते, {farmerName}
+              </h1>
+              <span className="text-2xl" role="img" aria-label="waving hand">👋</span>
+            </div>
+
+            <p className="text-base sm:text-lg text-emerald-800 font-medium">
+              आज अपनी फसल का बेहतर भाव खोजें
+            </p>
+
+            {/* Verification badge */}
+            {isVerified && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold border border-emerald-200">
+                <CheckCircle2 size={13} />
+                सत्यापित किसान / Verified Farmer
+              </span>
+            )}
           </div>
-          <p className="text-base sm:text-lg text-emerald-800 font-medium">
-            आज अपनी फसल का बेहतर भाव खोजें
-          </p>
+
+          {/* Right: avatar */}
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0">
+            <Sprout size={28} aria-hidden="true" />
+          </div>
         </div>
-        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0">
-          <Sprout size={28} aria-hidden="true" />
-        </div>
+
+        {/* Farmer details row */}
+        {(mobile || locationString) && (
+          <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-x-5 gap-y-1">
+            {mobile && (
+              <span className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <Phone size={13} className="text-slate-400" />
+                {mobile}
+              </span>
+            )}
+            {locationString && (
+              <span className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <MapPin size={13} className="text-slate-400" />
+                {locationString}
+              </span>
+            )}
+          </div>
+        )}
       </section>
 
-      {/* 2. MARKET PRICE CARD */}
-      <section aria-labelledby="market-price-heading">
-        <Card className="bg-gradient-to-br from-emerald-900 via-emerald-850 to-teal-900 text-white border-none shadow-xl relative overflow-hidden p-6">
-          {/* Subtle background icon glow */}
-          <TrendingUp className="absolute -right-6 -bottom-6 w-40 h-40 text-emerald-500/10 pointer-events-none" aria-hidden="true" />
-
-          {/* Card Header */}
-          <div className="flex items-center justify-between mb-4 border-b border-emerald-700/50 pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-700/60 text-emerald-300 flex items-center justify-center">
-                <TrendingUp size={20} aria-hidden="true" />
-              </div>
-              <h2 id="market-price-heading" className="text-lg sm:text-xl font-bold text-white tracking-wide">
-                आज का मंडी भाव
-              </h2>
-            </div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-800/80 text-emerald-200 text-xs font-semibold border border-emerald-700/60">
-              <Clock size={12} />
-              <span>{demoMarketData.updated}</span>
+      {/* ── 2. MARKET PRICE CARD (live backend data with fallback) ──────── */}
+      <section aria-labelledby="market-price-section">
+        {priceLoading ? (
+          /* Loading skeleton — preserves layout height during fetch */
+          <div className="bg-gradient-to-br from-emerald-900 via-emerald-850 to-teal-900 rounded-2xl p-6 flex items-center justify-center min-h-[140px] shadow-xl">
+            <div className="flex items-center gap-3 text-emerald-300">
+              <Loader2 size={24} className="animate-spin" aria-hidden="true" />
+              <span className="text-sm font-medium">मंडी भाव लोड हो रहे हैं…</span>
             </div>
           </div>
-
-          {/* Price Metrics Grid */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <div className="text-emerald-300 text-sm font-semibold tracking-wider uppercase">
-                मुख्य फसल / Crop
-              </div>
-              <div className="text-3xl sm:text-4xl font-extrabold text-white mt-1">
-                {demoMarketData.crop}
-              </div>
-            </div>
-
-            <div className="bg-emerald-800/50 backdrop-blur-xs rounded-2xl p-4 border border-emerald-700/50 flex items-center justify-between sm:justify-end gap-6">
-              <div>
-                <div className="text-xs text-emerald-200 font-medium">अनुमानित भाव / Market Rate</div>
-                <div className="text-2xl sm:text-3xl font-black text-amber-300 mt-0.5">
-                  {demoMarketData.price} <span className="text-sm font-medium text-emerald-100">/ {demoMarketData.unit}</span>
-                </div>
-              </div>
-              <div className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 text-sm font-bold border border-emerald-400/30 shrink-0">
-                <ArrowUpRight size={18} />
-                <span>{demoMarketData.trend}</span>
-              </div>
-            </div>
+        ) : (
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label="मंडी भाव देखें / View market prices"
+            onClick={() => onNavigate?.('prices')}
+            onKeyDown={(e) => e.key === 'Enter' && onNavigate?.('prices')}
+            className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 rounded-2xl"
+          >
+            <MarketPriceCard
+              price={priceData ?? {
+                commodity: 'Wheat',
+                variety: 'Common',
+                market: 'Sample Market',
+                district: '–',
+                state: '–',
+                modalPrice: 2450,
+                minPrice: 2200,
+                maxPrice: 2650,
+                unit: 'Quintal',
+                date: null,
+              }}
+              variant="hero"
+              isFallback={priceSource === 'fallback' || !priceData}
+            />
           </div>
-        </Card>
+        )}
       </section>
 
-      {/* 3. PRIMARY ACTION GRID */}
+      {/* ── 3. PRIMARY ACTION GRID ───────────────────────────────────────── */}
       <section aria-label="मुख्य कार्य / Primary Actions">
+        {/* Coming soon toast */}
+        {comingSoonId && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-3 px-4 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-medium text-center shadow-lg"
+          >
+            जल्द आ रहा है / Coming soon
+          </div>
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
           {ACTION_ITEMS.map((item) => {
             const Icon = item.icon
+            const isComingSoon = comingSoonId === item.id
+
             return (
               <button
                 key={item.id}
                 type="button"
                 aria-label={item.ariaLabel}
-                className="group flex flex-col items-center justify-center p-5 sm:p-6 bg-white rounded-2xl border border-emerald-100 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                aria-disabled={!item.available}
+                onClick={() => {
+                  if (item.available) {
+                    onNavigate?.(item.id)
+                  } else {
+                    handleComingSoon(item.id)
+                  }
+                }}
+                className={`group relative flex flex-col items-center justify-center p-5 sm:p-6 bg-white rounded-2xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                  item.available
+                    ? 'border-emerald-100 shadow-xs hover:shadow-md hover:border-emerald-300 active:scale-95'
+                    : 'border-slate-100 shadow-xs opacity-70 cursor-not-allowed'
+                }`}
               >
-                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border ${item.color} mb-3 group-hover:scale-110 transition-transform duration-200 shadow-xs`}>
+                <div
+                  className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border ${item.color} mb-3 ${item.available ? 'group-hover:scale-110 transition-transform duration-200' : ''} shadow-xs`}
+                >
                   <Icon size={30} aria-hidden="true" />
                 </div>
-                <span className="text-base sm:text-lg font-bold text-slate-800 group-hover:text-emerald-800 transition-colors">
+                <span
+                  className={`text-base sm:text-lg font-bold transition-colors ${
+                    item.available
+                      ? 'text-slate-800 group-hover:text-emerald-800'
+                      : 'text-slate-500'
+                  }`}
+                >
                   {item.title}
                 </span>
+                {!item.available && (
+                  <span className="mt-1 text-[10px] font-semibold text-slate-400 tracking-wide uppercase">
+                    जल्द आ रहा है
+                  </span>
+                )}
+                {isComingSoon && (
+                  <span className="absolute inset-0 rounded-2xl ring-2 ring-emerald-400 ring-offset-0 animate-pulse" />
+                )}
               </button>
             )
           })}
         </div>
       </section>
 
-      {/* 4. SMART ADVICE CARD */}
+      {/* ── 4. SMART ADVICE CARD ─────────────────────────────────────────── */}
       <section aria-labelledby="advice-heading">
         <Card className="bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-amber-50/90 border-amber-200/80 p-5 flex items-start gap-4">
           <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
             <Lightbulb size={26} aria-hidden="true" />
           </div>
           <div className="space-y-1">
-            <h3 id="advice-heading" className="text-base sm:text-lg font-bold text-amber-950 flex items-center gap-2">
+            <h3
+              id="advice-heading"
+              className="text-base sm:text-lg font-bold text-amber-950 flex items-center gap-2"
+            >
               <span>आज की सलाह</span>
             </h3>
             <p className="text-sm sm:text-base text-amber-900/90 font-medium leading-relaxed">
@@ -174,17 +309,18 @@ export default function FarmerHome() {
         </Card>
       </section>
 
-      {/* 5. QUICK SELL PRIMARY CTA BUTTON */}
-      <section aria-label="फसल बिक्री / Sell Crop CTA">
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          className="py-4 text-xl font-extrabold shadow-lg shadow-emerald-600/30 gap-3 rounded-2xl"
+      {/* ── 5. SELL CROP CTA — navigates to My Crops management page ── */}
+      <section aria-label="फसल बिक्री / Sell Crop">
+        <button
+          type="button"
+          aria-label="मेरी फसल जोड़ें / Add My Crop"
+          onClick={() => onNavigate?.('my-crops')}
+          className="w-full flex items-center justify-center gap-3 py-4 px-6 text-xl font-extrabold rounded-2xl bg-emerald-600 text-white border-2 border-emerald-600 transition-colors hover:bg-emerald-700 hover:border-emerald-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-md shadow-emerald-600/20"
         >
           <Sprout size={28} aria-hidden="true" />
           <span>फसल बेचें</span>
-        </Button>
+          <ChevronRight size={20} className="ml-auto" aria-hidden="true" />
+        </button>
       </section>
     </div>
   )
