@@ -19,6 +19,7 @@ import {
   Briefcase,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 import { updateBuyerProfile } from '../../services/profileService'
 
 // ── Language options — must match registration form codes ────────────────────
@@ -328,6 +329,7 @@ function EditBuyerProfileForm({ user, onSave, onCancel }) {
  */
 export default function BuyerProfile({ user, onNavigate }) {
   const { logout, updateUser } = useAuth()
+  const { t } = useLanguage()
   const [editing, setEditing] = useState(false)
   const [successMessage, setSuccessMessage] = useState(null)
 
@@ -340,7 +342,7 @@ export default function BuyerProfile({ user, onNavigate }) {
   const handleSave = (updatedUser) => {
     updateUser(updatedUser)
     setEditing(false)
-    setSuccessMessage('Profile updated successfully!')
+    setSuccessMessage(t('profileUpdated', 'Profile updated successfully!'))
     setTimeout(() => setSuccessMessage(null), 3500)
   }
 
@@ -362,11 +364,11 @@ export default function BuyerProfile({ user, onNavigate }) {
                 id="buyer-profile-heading"
                 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight truncate"
               >
-                {user?.name || 'Buyer'}
+                {user?.name || t('buyer', 'Buyer')}
               </h1>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border bg-blue-100 text-blue-800 border-blue-200">
                 <ShoppingBag size={11} aria-hidden="true" />
-                Buyer
+                {t('buyer', 'Buyer')}
               </span>
             </div>
 
@@ -379,8 +381,7 @@ export default function BuyerProfile({ user, onNavigate }) {
                 className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
               >
                 <Pencil size={13} aria-hidden="true" />
-                <span className="hidden sm:inline">Edit Profile</span>
-                <span className="sm:hidden">Edit</span>
+                <span>{t('editProfile', 'Edit Profile')}</span>
               </button>
             )}
           </div>
@@ -409,15 +410,15 @@ export default function BuyerProfile({ user, onNavigate }) {
       )}
 
       {/* ── DETAILS CARD ─────────────────────────────────────────────── */}
-      <section aria-label="Profile Details">
+      <section aria-label={t('buyerProfile', 'Profile Details')}>
         <Card className="p-5 divide-y-0">
-          <ProfileRow icon={Phone}        label="Mobile"           value={user?.mobile} />
-          <ProfileRow icon={User}         label="Role"             value="Buyer" />
-          <ProfileRow icon={Briefcase}    label="Business Name"    value={user?.businessName} />
-          <ProfileRow icon={ShoppingBag}  label="Business Type"    value={user?.businessType} />
-          <ProfileRow icon={MapPin}       label="Location"         value={locationString} />
-          <ProfileRow icon={Globe}        label="Language"         value={languageLabel} />
-          <ProfileRow icon={CalendarDays} label="Joined"           value={joinedDate} />
+          <ProfileRow icon={Phone}        label={t('mobile', 'Mobile')}           value={user?.mobile} />
+          <ProfileRow icon={User}         label={t('role', 'Role')}               value={t('buyer', 'Buyer')} />
+          <ProfileRow icon={Briefcase}    label={t('businessName', 'Business Name')} value={user?.businessName} />
+          <ProfileRow icon={ShoppingBag}  label={t('businessType', 'Business Type')} value={user?.businessType} />
+          <ProfileRow icon={MapPin}       label={t('location', 'Location')}       value={locationString} />
+          <ProfileRow icon={Globe}        label={t('preferredLanguage', 'Language')} value={languageLabel} />
+          <ProfileRow icon={CalendarDays} label={t('memberSince', 'Joined')}      value={joinedDate} />
         </Card>
       </section>
 
@@ -430,7 +431,7 @@ export default function BuyerProfile({ user, onNavigate }) {
           onClick={() => onNavigate?.('buyer-authenticated')}
         >
           <Home size={18} />
-          <span>Portal</span>
+          <span>{t('goHome', 'Home')}</span>
         </Button>
         <Button
           variant="secondary"
@@ -439,7 +440,7 @@ export default function BuyerProfile({ user, onNavigate }) {
           onClick={logout}
         >
           <LogOut size={18} />
-          <span>Logout</span>
+          <span>{t('logout', 'Logout')}</span>
         </Button>
       </div>
 

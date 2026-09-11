@@ -1,7 +1,7 @@
 import { request } from './api'
 
 /**
- * Auth Service connecting Smart Mandi authentication and OTP endpoints.
+ * Auth Service connecting KisanMitra authentication and OTP endpoints.
  */
 
 export const sendFarmerOtp = async (mobile) => {

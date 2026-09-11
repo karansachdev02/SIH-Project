@@ -21,6 +21,7 @@ import {
   Star,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 import { updateFarmerProfile } from '../../services/profileService'
 import { getFarmerReviews } from '../../services/reviewService'
 
@@ -42,32 +43,32 @@ const LANGUAGE_LABELS = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function getVerificationBadge(status) {
+function getVerificationBadge(status, t) {
   switch (status) {
     case 'verified':
       return {
-        label: 'सत्यापित / Verified',
+        label: t ? t('verifiedStatus', 'Verified') : 'Verified',
         icon: ShieldCheck,
         className: 'bg-emerald-100 text-emerald-800 border-emerald-200',
         iconClass: 'text-emerald-600',
       }
     case 'pending':
       return {
-        label: 'समीक्षाधीन / Pending',
+        label: t ? t('pendingStatus', 'Pending Review') : 'Pending Review',
         icon: Clock,
         className: 'bg-amber-100 text-amber-800 border-amber-200',
         iconClass: 'text-amber-600',
       }
     case 'rejected':
       return {
-        label: 'अस्वीकृत / Rejected',
+        label: t ? t('rejectedStatus', 'Rejected') : 'Rejected',
         icon: XCircle,
         className: 'bg-rose-100 text-rose-800 border-rose-200',
         iconClass: 'text-rose-600',
       }
     default:
       return {
-        label: 'अज्ञात / Unknown',
+        label: t ? t('noData', 'Unknown') : 'Unknown',
         icon: User,
         className: 'bg-slate-100 text-slate-600 border-slate-200',
         iconClass: 'text-slate-400',
@@ -173,7 +174,7 @@ function EditProfileForm({ user, onSave, onCancel }) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
           <Pencil size={16} className="text-amber-600" aria-hidden="true" />
-          प्रोफ़ाइल संपादित करें / Edit Profile
+          Edit Profile
         </h2>
         <button
           type="button"
@@ -391,10 +392,11 @@ function FarmerRatingSummary({ farmerId }) {
  */
 export default function FarmerProfile({ user, onNavigate }) {
   const { logout, updateUser } = useAuth()
+  const { t } = useLanguage()
   const [editing, setEditing] = useState(false)
   const [successMessage, setSuccessMessage] = useState(null)
 
-  const badge = getVerificationBadge(user?.verificationStatus)
+  const badge = getVerificationBadge(user?.verificationStatus, t)
   const BadgeIcon = badge.icon
 
   const locationParts = [user?.village, user?.district, user?.state].filter(Boolean)
@@ -404,15 +406,15 @@ export default function FarmerProfile({ user, onNavigate }) {
   const languageLabel = LANGUAGE_LABELS[user?.preferredLanguage] || user?.preferredLanguage || null
 
   const roleLabel =
-    user?.role === 'farmer' ? 'किसान / Farmer'
-    : user?.role === 'buyer' ? 'खरीदार / Buyer'
-    : user?.role === 'admin' ? 'प्रशासक / Admin'
+    user?.role === 'farmer' ? t('farmer', 'Farmer')
+    : user?.role === 'buyer' ? t('buyer', 'Buyer')
+    : user?.role === 'admin' ? 'Admin'
     : user?.role || null
 
   const handleSave = (updatedUser) => {
     updateUser(updatedUser)
     setEditing(false)
-    setSuccessMessage('प्रोफ़ाइल सफलतापूर्वक अपडेट की गई! / Profile updated successfully!')
+    setSuccessMessage(t('profileUpdated', 'Profile updated successfully!'))
     setTimeout(() => setSuccessMessage(null), 3500)
   }
 
@@ -434,7 +436,7 @@ export default function FarmerProfile({ user, onNavigate }) {
                 id="profile-heading"
                 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight truncate"
               >
-                {user?.name || 'किसान'}
+                {user?.name || t('farmer', 'Farmer')}
               </h1>
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${badge.className}`}
@@ -449,12 +451,11 @@ export default function FarmerProfile({ user, onNavigate }) {
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                aria-label="Edit profile"
+                aria-label={t('editProfile', 'Edit profile')}
                 className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1"
               >
                 <Pencil size={13} aria-hidden="true" />
-                <span className="hidden sm:inline">संपादित करें / Edit</span>
-                <span className="sm:hidden">Edit</span>
+                <span>{t('editProfile', 'Edit Profile')}</span>
               </button>
             )}
           </div>
@@ -483,13 +484,13 @@ export default function FarmerProfile({ user, onNavigate }) {
       )}
 
       {/* ── DETAILS CARD ─────────────────────────────────────────────────── */}
-      <section aria-label="प्रोफ़ाइल विवरण / Profile Details">
+      <section aria-label={t('farmerProfile', 'Profile Details')}>
         <Card className="p-5 divide-y-0">
-          <ProfileRow icon={Phone}        label="मोबाइल / Mobile"         value={user?.mobile} />
-          <ProfileRow icon={User}         label="भूमिका / Role"            value={roleLabel} />
-          <ProfileRow icon={MapPin}       label="स्थान / Location"         value={locationString} />
-          <ProfileRow icon={Globe}        label="भाषा / Language"          value={languageLabel} />
-          <ProfileRow icon={CalendarDays} label="खाता बनाया / Joined"     value={joinedDate} />
+          <ProfileRow icon={Phone}        label={t('mobile', 'Mobile')}           value={user?.mobile} />
+          <ProfileRow icon={User}         label={t('role', 'Role')}               value={roleLabel} />
+          <ProfileRow icon={MapPin}       label={t('location', 'Location')}       value={locationString} />
+          <ProfileRow icon={Globe}        label={t('preferredLanguage', 'Language')} value={languageLabel} />
+          <ProfileRow icon={CalendarDays} label={t('memberSince', 'Joined')}      value={joinedDate} />
         </Card>
       </section>
 
@@ -505,7 +506,7 @@ export default function FarmerProfile({ user, onNavigate }) {
           onClick={() => onNavigate?.('home')}
         >
           <Home size={18} />
-          <span>होम</span>
+          <span>{t('goHome', 'Home')}</span>
         </Button>
         <Button
           variant="secondary"
@@ -514,7 +515,7 @@ export default function FarmerProfile({ user, onNavigate }) {
           onClick={logout}
         >
           <LogOut size={18} />
-          <span>लॉगआउट</span>
+          <span>{t('logout', 'Logout')}</span>
         </Button>
       </div>
 

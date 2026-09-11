@@ -3,6 +3,7 @@ import Button from '../../components/common/Button'
 import MarketPriceCard from '../../components/common/MarketPriceCard'
 import { getMarketPrices } from '../../services/marketPriceService'
 import { getMarketHistory } from '../../services/marketHistoryService'
+import { useLanguage } from '../../context/LanguageContext'
 import {
   TrendingUp,
   Home,
@@ -72,6 +73,7 @@ function HistoryRow({ rec }) {
 // ── Historical prices section ─────────────────────────────────────────────────
 
 function HistoricalPricesSection() {
+  const { t } = useLanguage()
   const [histPrices, setHistPrices]       = useState([])
   const [histLoading, setHistLoading]     = useState(false)
   const [histError, setHistError]         = useState(null)
@@ -147,10 +149,10 @@ function HistoricalPricesSection() {
           </div>
           <div>
             <h2 id="history-heading" className="text-base font-bold text-slate-900">
-              ऐतिहासिक मंडी भाव / Historical Mandi Prices
+              {t('historicalPrices', 'Historical Mandi Prices')}
             </h2>
             <p className="text-[11px] text-slate-500">
-              Government mandi data — daily historical prices
+              {t('dataType', 'Government mandi data — daily historical prices')}
             </p>
           </div>
         </div>
@@ -407,6 +409,7 @@ function HistoricalPricesSection() {
  *   onNavigate — (viewKey: string) => void  callback into App.jsx currentView system
  */
 export default function Prices({ onNavigate }) {
+  const { language, t } = useLanguage()
   const [prices, setPrices]               = useState([])
   const [loading, setLoading]             = useState(true)
   const [error, setError]                 = useState(null)
@@ -468,16 +471,16 @@ export default function Prices({ onNavigate }) {
             </div>
             <div>
               <h1 id="prices-heading" className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                मंडी भाव
+                {t('prices', 'Mandi Prices')}
               </h1>
               <p className="text-xs text-slate-500 font-medium">
-                Mandi Market Prices — Latest Available Data
+                {t('liveMarketPrices', 'Live Market Prices')}
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => onNavigate?.('home')} aria-label="Go to Home">
+          <Button variant="outline" size="sm" onClick={() => onNavigate?.('home')} aria-label={t('goHome', 'Home')}>
             <Home size={16} />
-            <span className="hidden sm:inline">होम</span>
+            <span className="hidden sm:inline">{t('goHome', 'Home')}</span>
           </Button>
         </div>
       </section>
@@ -502,12 +505,12 @@ export default function Prices({ onNavigate }) {
       {/* ── CURRENT PRICE FILTER ─────────────────────────────────────── */}
       <form onSubmit={handleSearch} className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3" aria-label="Filter current prices">
         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-          फ़िल्टर / Filter — Latest Prices
+          {t('searchFilters', 'Search & Filters')}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label htmlFor="commodity-filter" className="block text-xs font-semibold text-slate-600 mb-1">
-              फसल / Commodity
+              {t('commodity', 'Commodity')}
             </label>
             <input
               id="commodity-filter"
@@ -524,7 +527,7 @@ export default function Prices({ onNavigate }) {
           </div>
           <div>
             <label htmlFor="state-filter" className="block text-xs font-semibold text-slate-600 mb-1">
-              राज्य / State
+              {t('state', 'State')}
             </label>
             <select
               id="state-filter"
@@ -532,7 +535,7 @@ export default function Prices({ onNavigate }) {
               onChange={(e) => setStagedState(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition-colors"
             >
-              <option value="">All States</option>
+              <option value="">{t('noResults', 'All States')}</option>
               {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -540,11 +543,11 @@ export default function Prices({ onNavigate }) {
         <div className="flex gap-2 pt-1">
           <Button type="submit" variant="primary" size="sm" disabled={loading}>
             <Search size={15} aria-hidden="true" />
-            <span>खोजें / Search</span>
+            <span>{t('search', 'Search')}</span>
           </Button>
           {(stagedCommodity || stagedState) && (
             <Button type="button" variant="outline" size="sm" onClick={handleReset} disabled={loading}>
-              Reset
+              {t('resetFilters', 'Reset')}
             </Button>
           )}
         </div>
@@ -555,27 +558,27 @@ export default function Prices({ onNavigate }) {
         {loading && (
           <div className="flex flex-col items-center justify-center py-10 gap-3 text-slate-500">
             <Loader2 size={32} className="animate-spin text-emerald-500" aria-hidden="true" />
-            <p className="text-sm font-medium">Loading market prices…</p>
+            <p className="text-sm font-medium">{t('loadingMarketPrices', 'Loading market prices…')}</p>
           </div>
         )}
         {!loading && error && (
           <div className="bg-white rounded-2xl border border-rose-100 p-6 flex flex-col items-center gap-3 text-center">
             <AlertCircle size={32} className="text-rose-400" aria-hidden="true" />
             <div>
-              <p className="font-bold text-slate-900 text-sm">Data unavailable</p>
+              <p className="font-bold text-slate-900 text-sm">{t('noData', 'Data unavailable')}</p>
               <p className="text-xs text-slate-500 mt-1">{error}</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => fetchPrices({ commodity, state })}>
-              <RefreshCw size={15} /><span>Retry</span>
+              <RefreshCw size={15} /><span>{t('retry', 'Retry')}</span>
             </Button>
           </div>
         )}
         {!loading && !error && prices.length === 0 && (
           <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center">
             <TrendingUp size={32} className="mx-auto text-slate-300 mb-3" aria-hidden="true" />
-            <p className="font-bold text-slate-800">No prices found</p>
-            <p className="text-xs text-slate-500 mt-1">No mandi data found for this filter.</p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={handleReset}>Show All</Button>
+            <p className="font-bold text-slate-800">{t('noResults', 'No prices found')}</p>
+            <p className="text-xs text-slate-500 mt-1">{t('noData', 'No mandi data found for this filter.')}</p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={handleReset}>{t('viewAll', 'Show All')}</Button>
           </div>
         )}
         {!loading && !error && prices.length > 0 && (
@@ -592,11 +595,12 @@ export default function Prices({ onNavigate }) {
                 price={price}
                 variant="compact"
                 isFallback={isFallback}
+                locale={language}
               />
             ))}
             <div className="pt-1 flex justify-center">
               <Button variant="outline" size="sm" onClick={() => fetchPrices({ commodity, state })} disabled={loading}>
-                <RefreshCw size={15} /><span>Refresh</span>
+                <RefreshCw size={15} /><span>{t('refresh', 'Refresh')}</span>
               </Button>
             </div>
           </div>

@@ -9,8 +9,11 @@ import {
   ChevronRight,
   Loader2,
   Wheat,
+  Truck,
+  CreditCard,
 } from 'lucide-react'
 import { getMarketplaceCrops } from '../../services/marketplaceService'
+import { useLanguage } from '../../context/LanguageContext'
 
 /**
  * Buyer Home Dashboard.
@@ -20,6 +23,7 @@ import { getMarketplaceCrops } from '../../services/marketplaceService'
  *   onNavigate — (viewKey: string) => void  from App.jsx currentView system
  */
 export default function BuyerHome({ user, onNavigate }) {
+  const { t } = useLanguage()
   // ── Marketplace listing count ─────────────────────────────────────────────
   const [listingCount, setListingCount]   = useState(null)
   const [countLoading, setCountLoading]   = useState(true)
@@ -57,24 +61,40 @@ export default function BuyerHome({ user, onNavigate }) {
   const ACTIONS = [
     {
       id: 'marketplace',
-      label: 'Marketplace',
-      sublabel: 'Browse crops from verified farmers',
+      label: t('marketplace', 'Marketplace'),
+      sublabel: t('marketplaceSublabel', 'Browse crops from verified farmers'),
       icon: ShoppingBag,
       iconBg: 'bg-emerald-100 text-emerald-700',
       border: 'border-emerald-100 hover:border-emerald-300 focus:ring-emerald-500',
     },
     {
       id: 'my-bookings',
-      label: 'My Bookings',
-      sublabel: 'Track your crop pre-booking requests',
+      label: t('myBookings', 'My Bookings'),
+      sublabel: t('myBookingsSublabel', 'Track your crop pre-booking requests'),
       icon: ClipboardList,
       iconBg: 'bg-amber-100 text-amber-700',
       border: 'border-amber-100 hover:border-amber-300 focus:ring-amber-500',
     },
     {
+      id: 'buyer-deliveries',
+      label: t('myDeliveries', 'My Deliveries'),
+      sublabel: t('myDeliveriesSublabel', 'Track your crop delivery orders'),
+      icon: Truck,
+      iconBg: 'bg-orange-100 text-orange-700',
+      border: 'border-orange-100 hover:border-orange-300 focus:ring-orange-500',
+    },
+    {
+      id: 'buyer-transactions',
+      label: t('myTransactions', 'My Transactions'),
+      sublabel: t('myTransactionsSublabel', 'Demo payment status for your bookings'),
+      icon: CreditCard,
+      iconBg: 'bg-violet-100 text-violet-700',
+      border: 'border-violet-100 hover:border-violet-300 focus:ring-violet-500',
+    },
+    {
       id: 'buyer-profile',
-      label: 'My Profile',
-      sublabel: 'View and edit your account details',
+      label: t('profile', 'My Profile'),
+      sublabel: t('profileSublabel', 'View and edit your account details'),
       icon: User,
       iconBg: 'bg-blue-100 text-blue-700',
       border: 'border-blue-100 hover:border-blue-300 focus:ring-blue-500',
@@ -97,7 +117,7 @@ export default function BuyerHome({ user, onNavigate }) {
                 id="buyer-greeting"
                 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight"
               >
-                Welcome, {buyerName}
+                {t('welcome', 'Welcome')}, {buyerName}
               </h1>
               <span className="text-2xl" role="img" aria-label="waving hand">👋</span>
             </div>
@@ -115,7 +135,7 @@ export default function BuyerHome({ user, onNavigate }) {
             )}
 
             <p className="text-sm text-slate-500 font-medium">
-              Find quality crops directly from verified farmers
+              {t('buyerSubtitle', 'Find quality crops directly from verified farmers')}
             </p>
           </div>
 
@@ -147,30 +167,30 @@ export default function BuyerHome({ user, onNavigate }) {
       {/* ── 2. MARKETPLACE SUMMARY CARD ───────────────────────────────────── */}
       <button
         type="button"
-        aria-label="Go to Marketplace"
+        aria-label={t('marketplace', 'Go to Marketplace')}
         onClick={() => onNavigate?.('marketplace')}
         className="w-full text-left bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-5 shadow-lg shadow-emerald-700/20 hover:from-emerald-700 hover:to-teal-800 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 active:scale-[0.99]"
       >
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-xs font-semibold text-emerald-200 uppercase tracking-wider">
-              Live Listings
+              {t('liveListings', 'Live Listings')}
             </p>
             {countLoading ? (
               <div className="flex items-center gap-2 text-white">
                 <Loader2 size={18} className="animate-spin" aria-hidden="true" />
-                <span className="text-sm font-medium">Loading...</span>
+                <span className="text-sm font-medium">{t('loading', 'Loading...')}</span>
               </div>
             ) : listingCount !== null ? (
               <p className="text-3xl font-extrabold text-white">
                 {listingCount}
                 <span className="text-base font-semibold text-emerald-200 ml-2">
-                  crop{listingCount !== 1 ? 's' : ''} available
+                  {listingCount !== 1 ? t('cropsAvailable', 'crops available') : t('cropAvailable', 'crop available')}
                 </span>
               </p>
             ) : (
               <p className="text-base font-semibold text-emerald-100">
-                Browse the marketplace
+                {t('browseMarketplace', 'Browse the marketplace')}
               </p>
             )}
           </div>
@@ -179,13 +199,13 @@ export default function BuyerHome({ user, onNavigate }) {
           </div>
         </div>
         <p className="mt-2 text-xs text-emerald-200 font-medium flex items-center gap-1">
-          Tap to browse &amp; pre-book crops
+          {t('tapToBrowse', 'Tap to browse & pre-book crops')}
           <ChevronRight size={14} aria-hidden="true" />
         </p>
       </button>
 
       {/* ── 3. QUICK ACTIONS ──────────────────────────────────────────────── */}
-      <section aria-label="Quick Actions">
+      <section aria-label={t('quickActions', 'Quick Actions')}>
         <div className="space-y-3">
           {ACTIONS.map((action) => {
             const Icon = action.icon

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import Chatbot from './components/chatbot/Chatbot'
 import MainLayout from './layouts/MainLayout'
 import FarmerHome from './pages/farmer/FarmerHome'
 import FarmerProfile from './pages/farmer/FarmerProfile'
@@ -7,12 +8,17 @@ import MyCrops from './pages/farmer/MyCrops'
 import Prices from './pages/farmer/Prices'
 import Weather from './pages/farmer/Weather'
 import PricePrediction from './pages/farmer/PricePrediction'
+import DeliveryManagement from './pages/farmer/DeliveryManagement'
+import TransactionManagement from './pages/farmer/TransactionManagement'
 import BuyerHome from './pages/buyer/BuyerHome'
 import Marketplace from './pages/buyer/Marketplace'
 import CropDetails from './pages/buyer/CropDetails'
 import MyBookings from './pages/buyer/MyBookings'
 import BookingConfirmation from './pages/buyer/BookingConfirmation'
 import BuyerProfile from './pages/buyer/BuyerProfile'
+import MyDeliveries from './pages/buyer/MyDeliveries'
+import DeliveryTracking from './pages/buyer/DeliveryTracking'
+import MyTransactions from './pages/buyer/MyTransactions'
 import BookingRequests from './pages/farmer/BookingRequests'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
@@ -43,7 +49,7 @@ function AppContent() {
       {/* Prototype Testing Toolbar (Developer/Testing Control) */}
       <div className="bg-emerald-950 text-emerald-100 text-xs py-2 px-4 flex items-center justify-between border-b border-emerald-800 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-emerald-300">Smart Mandi Prototype:</span>
+          <span className="font-bold text-emerald-300">KisanMitra Prototype:</span>
           {isAuthenticated ? (
             <span className="px-2 py-0.5 rounded-full bg-emerald-800 text-emerald-100 text-[11px]">
               Logged in as: {user?.name} ({user?.role})
@@ -322,9 +328,26 @@ function AppContent() {
       )}
 
       {/* My Crops View — authenticated farmers only */}
-      {currentView === 'my-crops' && isAuthenticated && (
+      {currentView === 'my-crops' && isAuthenticated && user?.role === 'farmer' && (
         <MainLayout activeTab={currentView} onNavigate={setCurrentView} user={user} isAuthenticated={isAuthenticated}>
           <MyCrops user={user} onNavigate={setCurrentView} />
+        </MainLayout>
+      )}
+
+      {/* Guard: my-crops attempted without farmer role */}
+      {currentView === 'my-crops' && isAuthenticated && user?.role !== 'farmer' && (
+        <MainLayout activeTab={currentView} onNavigate={setCurrentView} user={user} isAuthenticated={isAuthenticated}>
+          <div className="max-w-lg mx-auto py-8">
+            <Card className="text-center p-8 space-y-4">
+              <Wheat size={36} className="mx-auto text-amber-400" />
+              <p className="font-bold text-slate-900">Farmer Access Required</p>
+              <p className="text-sm text-slate-600">Crop management is for farmers only.</p>
+              <Button variant="primary" size="md" onClick={() => setCurrentView('home')}>
+                <Home size={18} />
+                <span>Go Home</span>
+              </Button>
+            </Card>
+          </div>
         </MainLayout>
       )}
 
@@ -517,6 +540,21 @@ function AppContent() {
         </MainLayout>
       )}
 
+      {/* Guard: booking-confirmation without buyer auth */}
+      {currentView === 'booking-confirmation' && (!isAuthenticated || user?.role !== 'buyer') && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <div className="max-w-lg mx-auto py-8">
+            <Card className="text-center p-8 space-y-4">
+              <ShoppingBag size={36} className="mx-auto text-blue-400" />
+              <p className="font-bold text-slate-900">Buyer Login Required</p>
+              <Button variant="primary" size="md" onClick={() => setCurrentView('login')}>
+                <LogIn size={18} /><span>Log In</span>
+              </Button>
+            </Card>
+          </div>
+        </MainLayout>
+      )}
+
       {/* Booking Requests — farmer authenticated */}
       {currentView === 'booking-requests' && isAuthenticated && user?.role === 'farmer' && (
         <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
@@ -560,6 +598,121 @@ function AppContent() {
           </div>
         </MainLayout>
       )}
+
+      {/* Delivery Management — farmer only */}
+      {currentView === 'delivery-management' && isAuthenticated && user?.role === 'farmer' && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <DeliveryManagement onNavigate={navigate} />
+        </MainLayout>
+      )}
+
+      {/* Guard: delivery-management without farmer auth */}
+      {currentView === 'delivery-management' && (!isAuthenticated || user?.role !== 'farmer') && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <div className="max-w-lg mx-auto py-8">
+            <Card className="text-center p-8 space-y-4">
+              <ShoppingBag size={36} className="mx-auto text-slate-400" />
+              <p className="font-bold text-slate-900">Farmer Access Required</p>
+              <Button variant="primary" size="md" onClick={() => setCurrentView('home')}>
+                <Home size={18} /><span>Go Home</span>
+              </Button>
+            </Card>
+          </div>
+        </MainLayout>
+      )}
+
+      {/* Buyer Deliveries — buyer only */}
+      {currentView === 'buyer-deliveries' && isAuthenticated && user?.role === 'buyer' && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <MyDeliveries onNavigate={navigate} />
+        </MainLayout>
+      )}
+
+      {/* Guard: buyer-deliveries without buyer auth */}
+      {currentView === 'buyer-deliveries' && (!isAuthenticated || user?.role !== 'buyer') && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <div className="max-w-lg mx-auto py-8">
+            <Card className="text-center p-8 space-y-4">
+              <ShoppingBag size={36} className="mx-auto text-blue-400" />
+              <p className="font-bold text-slate-900">Buyer Login Required</p>
+              <Button variant="primary" size="md" onClick={() => setCurrentView('login')}>
+                <LogIn size={18} /><span>Log In</span>
+              </Button>
+            </Card>
+          </div>
+        </MainLayout>
+      )}
+
+      {/* Delivery Tracking — buyer or farmer owner */}
+      {currentView === 'delivery-tracking' && isAuthenticated && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <DeliveryTracking deliveryId={viewParams.deliveryId} onNavigate={navigate} />
+        </MainLayout>
+      )}
+
+      {/* Guard: delivery-tracking without auth */}
+      {currentView === 'delivery-tracking' && !isAuthenticated && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <div className="max-w-lg mx-auto py-8">
+            <Card className="text-center p-8 space-y-4">
+              <ShoppingBag size={36} className="mx-auto text-blue-400" />
+              <p className="font-bold text-slate-900">Login Required</p>
+              <Button variant="primary" size="md" onClick={() => setCurrentView('login')}>
+                <LogIn size={18} /><span>Log In</span>
+              </Button>
+            </Card>
+          </div>
+        </MainLayout>
+      )}
+
+      {/* Buyer Transactions — buyer only */}
+      {currentView === 'buyer-transactions' && isAuthenticated && user?.role === 'buyer' && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <MyTransactions onNavigate={navigate} />
+        </MainLayout>
+      )}
+
+      {/* Guard: buyer-transactions without buyer auth */}
+      {currentView === 'buyer-transactions' && (!isAuthenticated || user?.role !== 'buyer') && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <div className="max-w-lg mx-auto py-8">
+            <Card className="text-center p-8 space-y-4">
+              <ShoppingBag size={36} className="mx-auto text-blue-400" />
+              <p className="font-bold text-slate-900">Buyer Login Required</p>
+              <Button variant="primary" size="md" onClick={() => setCurrentView('login')}>
+                <LogIn size={18} /><span>Log In</span>
+              </Button>
+            </Card>
+          </div>
+        </MainLayout>
+      )}
+
+      {/* Farmer Transactions — farmer only */}
+      {currentView === 'farmer-transactions' && isAuthenticated && user?.role === 'farmer' && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <TransactionManagement onNavigate={navigate} />
+        </MainLayout>
+      )}
+
+      {/* Guard: farmer-transactions without farmer auth */}
+      {currentView === 'farmer-transactions' && (!isAuthenticated || user?.role !== 'farmer') && (
+        <MainLayout activeTab={currentView} onNavigate={navigate} user={user} isAuthenticated={isAuthenticated}>
+          <div className="max-w-lg mx-auto py-8">
+            <Card className="text-center p-8 space-y-4">
+              <ShoppingBag size={36} className="mx-auto text-slate-400" />
+              <p className="font-bold text-slate-900">Farmer Access Required</p>
+              <Button variant="primary" size="md" onClick={() => setCurrentView('home')}>
+                <Home size={18} /><span>Go Home</span>
+              </Button>
+            </Card>
+          </div>
+        </MainLayout>
+      )}
+
+      {/* ── Global Floating Chatbot ────────────────────────────────────────── */}
+      {/* Rendered outside MainLayout so it floats above all views.            */}
+      {/* Only visible when authenticated (Chatbot component guards internally). */}
+      <Chatbot user={user} isAuthenticated={isAuthenticated} />
     </div>
   )
 }

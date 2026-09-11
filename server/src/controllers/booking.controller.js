@@ -1,7 +1,10 @@
 import mongoose from 'mongoose'
 import Crop    from '../models/Crop.js'
 import Booking from '../models/Booking.js'
+import Delivery from '../models/Delivery.js'
+import Transaction, { generateTransactionReference } from '../models/Transaction.js'
 import { generateBookingSlipPdf } from '../services/bookingPdfService.js'
+import { createNotification } from '../services/notificationService.js'
 
 // ── Helper: validate a MongoDB ObjectId string ────────────────────────────────
 function isValidObjectId(id) {
@@ -123,6 +126,20 @@ export const createPrebooking = async (req, res) => {
       buyerNote,
       // farmerNote defaults to '' — farmer sets it when responding
     })
+
+    // ── Fire notification to farmer (non-blocking) ────────────────────────────
+    try {
+      await createNotification({
+        recipient:   farmerId,
+        type:        'booking_created',
+        title:       'New Booking Request',
+        message:     `A buyer has placed a pre-booking request for your crop.`,
+        relatedId:   booking._id,
+        relatedType: 'Booking',
+      })
+    } catch (notifErr) {
+      console.error('booking_created notification failed (non-fatal):', notifErr?.message)
+    }
 
     // ── Shape safe response — no passwords, tokens, or sensitive user data ────
     return res.status(201).json({
@@ -314,6 +331,103 @@ export const updateBookingStatus = async (req, res) => {
     }
 
     await booking.save()
+
+    // ── Fire notification to buyer (non-blocking) ─────────────────────────────
+    try {
+      const buyerId = booking.buyer?._id || booking.buyer
+      if (newStatus === 'confirmed') {
+        await createNotification({
+          recipient:   buyerId,
+          type:        'booking_confirmed',
+          title:       'Booking Confirmed',
+          message:     'Your pre-booking request has been confirmed by the farmer.',
+          relatedId:   booking._id,
+          relatedType: 'Booking',
+        })
+      } else if (newStatus === 'cancelled') {
+        await createNotification({
+          recipient:   buyerId,
+          type:        'booking_cancelled',
+          title:       'Booking Cancelled',
+          message:     'Your pre-booking request has been cancelled.',
+          relatedId:   booking._id,
+          relatedType: 'Booking',
+        })
+      } else if (newStatus === 'completed') {
+        await createNotification({
+          recipient:   buyerId,
+          type:        'booking_completed',
+          title:       'Booking Completed',
+          message:     'Your booking has been marked as completed by the farmer.',
+          relatedId:   booking._id,
+          relatedType: 'Booking',
+        })
+      }
+    } catch (notifErr) {
+      console.error('booking status notification failed (non-fatal):', notifErr?.message)
+    }
+
+    // ── Auto-create Delivery record when booking is confirmed ─────────────────
+    if (newStatus === 'confirmed') {
+      try {
+        const exists = await Delivery.findOne({ booking: booking._id })
+        if (!exists) {
+          const buyerId  = booking.buyer?._id  || booking.buyer
+          const farmerId = booking.farmer?._id || booking.farmer
+          const cropId   = booking.crop?._id   || booking.crop
+
+          // Pre-fill delivery address from buyer populated fields
+          const buyer = booking.buyer
+          const addrParts = []
+          if (buyer?.district) addrParts.push(buyer.district)
+          if (buyer?.state)    addrParts.push(buyer.state)
+          const deliveryAddress = addrParts.length ? addrParts.join(', ') : ''
+
+          await Delivery.create({
+            booking:         booking._id,
+            buyer:           buyerId,
+            farmer:          farmerId,
+            crop:            cropId,
+            status:          'pending',
+            deliveryAddress,
+            contactName:     buyer?.name   || '',
+            contactMobile:   buyer?.mobile || '',
+          })
+        }
+      } catch (deliveryErr) {
+        console.error('auto-create delivery failed (non-fatal):', deliveryErr?.message)
+      }
+
+      // ── Auto-create Transaction record when booking is confirmed ─────────────
+      try {
+        const txnExists = await Transaction.findOne({ booking: booking._id })
+        if (!txnExists) {
+          const buyerId  = booking.buyer?._id  || booking.buyer
+          const farmerId = booking.farmer?._id || booking.farmer
+          const cropId   = booking.crop?._id   || booking.crop
+
+          // Calculate amount server-side: quantity * agreedPrice
+          const qty   = booking.quantity   || 0
+          const price = booking.agreedPrice || 0
+          const amount = Math.max(0, Number((qty * price).toFixed(2)))
+
+          await Transaction.create({
+            booking:   booking._id,
+            buyer:     buyerId,
+            farmer:    farmerId,
+            crop:      cropId,
+            amount,
+            currency:          'INR',
+            paymentMethod:     'pending',
+            paymentStatus:     'pending',
+            transactionStatus: 'pending',
+            reference:         generateTransactionReference(),
+          })
+        }
+      } catch (txnErr) {
+        console.error('auto-create transaction failed (non-fatal):', txnErr?.message)
+      }
+    }
 
     // ── Shape safe response ───────────────────────────────────────────────────
     const b = booking.toObject()

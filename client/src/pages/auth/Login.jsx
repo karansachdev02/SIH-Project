@@ -5,9 +5,10 @@ import Button from '../../components/common/Button'
 import LanguageSelector from '../../components/common/LanguageSelector'
 import { loginUser } from '../../services/authService'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 
 /**
- * Connected Login Page for Smart Mandi.
+ * Connected Login Page for KisanMitra.
  */
 export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFarmer }) {
   const [mobileNumber, setMobileNumber] = useState('')
@@ -18,23 +19,24 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
   const [pendingNotice, setPendingNotice] = useState(null)
 
   const { login, setPendingFarmerState } = useAuth()
+  const { t } = useLanguage()
 
   const validateForm = () => {
     setErrorMsg('')
     if (!mobileNumber.trim()) {
-      setErrorMsg('कृपया मोबाइल नंबर दर्ज करें / Mobile number is required')
+      setErrorMsg(t('mobileRequired', 'Mobile number is required'))
       return false
     }
     if (!/^[6-9]\d{9}$/.test(mobileNumber.trim())) {
-      setErrorMsg('कृपया मान्य 10-अंकीय मोबाइल नंबर दर्ज करें / Enter a valid 10-digit mobile number')
+      setErrorMsg(t('mobileInvalid', 'Enter a valid 10-digit mobile number'))
       return false
     }
     if (!password) {
-      setErrorMsg('कृपया पासवर्ड दर्ज करें / Password is required')
+      setErrorMsg(t('passwordRequired', 'Password is required'))
       return false
     }
     if (password.length < 6) {
-      setErrorMsg('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए / Password must be at least 6 characters')
+      setErrorMsg(t('passwordTooShort', 'Password must be at least 6 characters'))
       return false
     }
     return true
@@ -57,14 +59,14 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
       // Case 1: Farmer Pending Verification
       if (res.verificationStatus === 'pending' || res.authenticated === false) {
         setPendingFarmerState(res)
-        setPendingNotice('आपका खाता अभी सत्यापन के लिए लंबित है। सत्यापन पूरा होने के बाद आप लॉगिन कर सकेंगे।')
+        setPendingNotice(t('verificationPendingMsg', 'Your account is pending verification. You can log in once verification is complete.'))
         if (onPendingFarmer) onPendingFarmer(res)
         return
       }
 
       // Case 2: Rejected Verification
       if (res.verificationStatus === 'rejected') {
-        setErrorMsg('आपका किसान सत्यापन रद्द कर दिया गया है। / Your farmer verification was rejected.')
+        setErrorMsg(t('rejectedFarmer', 'Your farmer verification was rejected.'))
         return
       }
 
@@ -75,7 +77,7 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
       }
     } catch (err) {
       console.error('Login submit error:', err)
-      setErrorMsg(err.message || 'लॉगिन करने में विफलता। कृपया पुनः प्रयास करें। / Login failed.')
+      setErrorMsg(err.message || t('loginFailed', 'Login failed. Please try again.'))
     } finally {
       setSubmitting(false)
     }
@@ -89,7 +91,7 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
           <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
             <Sprout size={20} />
           </div>
-          <span className="font-bold text-lg text-emerald-950">Smart Mandi</span>
+          <span className="font-bold text-lg text-emerald-950">KisanMitra</span>
         </div>
         <LanguageSelector />
       </div>
@@ -99,10 +101,10 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
         {/* Title */}
         <div className="text-center space-y-2 mb-6">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            लॉगिन करें / Login
+            {t('loginTitle', 'Login')}
           </h1>
           <p className="text-sm text-slate-600 font-medium">
-            अपने मोबाइल नंबर से खाता एक्सेस करें
+            {t('loginSubtitle', 'Access your account using your mobile number')}
           </p>
         </div>
 
@@ -119,7 +121,7 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
           <div className="mb-5 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs sm:text-sm font-medium space-y-1">
             <div className="flex items-center gap-2 font-bold text-amber-900">
               <Clock size={18} className="text-amber-600 shrink-0" />
-              <span>सत्यापन लंबित / Verification Pending</span>
+              <span>{t('verificationPending', 'Verification Pending')}</span>
             </div>
             <p className="text-amber-800 leading-relaxed pl-6">
               {pendingNotice}
@@ -135,7 +137,7 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
               htmlFor="login-mobile"
               className="block text-sm font-bold text-slate-800"
             >
-              मोबाइल नंबर / Mobile Number <span className="text-emerald-600">*</span>
+              {t('mobileNumber', 'Mobile Number')} <span className="text-emerald-600">*</span>
             </label>
             <div className="relative rounded-2xl">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -148,7 +150,7 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
                 disabled={submitting}
                 value={mobileNumber}
                 onChange={(e) => setMobileNumber(e.target.value)}
-                placeholder="उदा. 98765 43210"
+                placeholder={t('mobilePlaceholder', 'e.g. 98765 43210')}
                 className="w-full pl-10 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all min-h-[48px] disabled:opacity-60"
               />
             </div>
@@ -160,7 +162,7 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
               htmlFor="login-password"
               className="block text-sm font-bold text-slate-800"
             >
-              पासवर्ड / Password <span className="text-emerald-600">*</span>
+              {t('password', 'Password')} <span className="text-emerald-600">*</span>
             </label>
             <div className="relative rounded-2xl">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -173,13 +175,13 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
                 disabled={submitting}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="पासवर्ड दर्ज करें"
+                placeholder={t('passwordPlaceholder', 'Enter password')}
                 className="w-full pl-10 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all min-h-[48px] disabled:opacity-60"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'पासवर्ड छिपाएं / Hide password' : 'पासवर्ड देखें / Show password'}
+                aria-label={showPassword ? t('hidePassword', 'Hide password') : t('showPassword', 'Show password')}
                 className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-emerald-600 focus:outline-none focus:text-emerald-600"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -197,7 +199,7 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
             className="mt-2"
           >
             <LogIn size={20} />
-            <span>{submitting ? 'लॉगिन हो रहा है... / Logging in...' : 'लॉगिन करें'}</span>
+            <span>{submitting ? t('loggingIn', 'Logging in...') : t('loginCta', 'Login')}</span>
           </Button>
         </form>
 
@@ -207,14 +209,14 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
             <div className="w-full border-t border-slate-200" />
           </div>
           <span className="relative bg-white px-3 text-xs font-semibold text-slate-400">
-            या / OR
+            {t('orSeparator', 'OR')}
           </span>
         </div>
 
         {/* Switch to Register */}
         <div className="text-center">
           <p className="text-sm text-slate-600 mb-3">
-            नया खाता खोलना चाहते हैं?
+            {t('noAccount', 'New here?')}
           </p>
           <Button
             variant="outline"
@@ -224,7 +226,7 @@ export default function Login({ onSwitchToRegister, onSuccessLogin, onPendingFar
             onClick={onSwitchToRegister}
           >
             <UserPlus size={18} />
-            <span>नया खाता बनाएं / Register</span>
+            <span>{t('createAccount', 'Create Account / Register')}</span>
           </Button>
         </div>
       </Card>

@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "create:admin": "node scripts/createAdmin.mjs"
+    "start": "node --import dotenv/config server.js",
+    "dev": "node --import dotenv/config --watch server.js",
+    "create:admin": "node scripts/createAdmin.mjs",
+    "reset:admin": "node scripts/resetAdmin.mjs",
+    "seed:market": "node scripts/seedMarketData.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

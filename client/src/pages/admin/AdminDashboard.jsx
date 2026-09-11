@@ -19,6 +19,7 @@ import {
   UserCheck,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 
@@ -89,6 +90,7 @@ function ActionCard({ icon: Icon, iconBg, iconColor, title, subtitle, badge, onC
  */
 export default function AdminDashboard({ onNavigate }) {
   const { logout } = useAuth()
+  const { t } = useLanguage()
   const [stats,   setStats]   = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
@@ -126,9 +128,9 @@ export default function AdminDashboard({ onNavigate }) {
                 id="admin-dash-heading"
                 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight"
               >
-                Admin Dashboard
+                {t('adminDashboard', 'Admin Dashboard')}
               </h1>
-              <p className="text-xs text-slate-500 font-medium">Platform overview</p>
+              <p className="text-xs text-slate-500 font-medium">{t('adminDashboard', 'Platform overview')}</p>
             </div>
           </div>
           <button
@@ -150,10 +152,10 @@ export default function AdminDashboard({ onNavigate }) {
           <div className="flex flex-col items-center gap-3 text-center py-2">
             <AlertCircle size={28} className="text-rose-400" aria-hidden="true" />
             <div>
-              <p className="font-bold text-slate-900 text-sm">Could not load stats</p>
+              <p className="font-bold text-slate-900 text-sm">{t('noData', 'Could not load stats')}</p>
               <p className="text-xs text-slate-500 mt-1">{error}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchStats}>Retry</Button>
+            <Button variant="outline" size="sm" onClick={fetchStats}>{t('retry', 'Retry')}</Button>
           </div>
         </Card>
       )}
@@ -161,12 +163,12 @@ export default function AdminDashboard({ onNavigate }) {
       {/* ── USERS SECTION ────────────────────────────────────────────────── */}
       {(loading || stats) && (
         <section aria-label="User statistics">
-          <SectionHeading>Users</SectionHeading>
+          <SectionHeading>{t('adminUsers', 'Users')}</SectionHeading>
           <div className="grid grid-cols-2 gap-3">
-            <StatCard icon={Users}     label="Total Farmers"    value={stats?.totalFarmers}    iconBg="bg-emerald-100" iconColor="text-emerald-700" loading={loading} />
-            <StatCard icon={ShoppingBag} label="Total Buyers"   value={stats?.totalBuyers}     iconBg="bg-blue-100"    iconColor="text-blue-700"    loading={loading} />
-            <StatCard icon={UserCheck}  label="Verified Farmers" value={stats?.verifiedFarmers} iconBg="bg-teal-100"   iconColor="text-teal-700"    loading={loading} />
-            <StatCard icon={Clock}      label="Pending Verif."  value={stats?.pendingVerifications} iconBg="bg-amber-100" iconColor="text-amber-700" loading={loading} />
+            <StatCard icon={Users}     label={t('farmer', 'Total Farmers') + 's'}  value={stats?.totalFarmers}    iconBg="bg-emerald-100" iconColor="text-emerald-700" loading={loading} />
+            <StatCard icon={ShoppingBag} label={t('buyer', 'Total Buyers') + 's'}  value={stats?.totalBuyers}     iconBg="bg-blue-100"    iconColor="text-blue-700"    loading={loading} />
+            <StatCard icon={UserCheck}  label={t('verifiedFarmer', 'Verified Farmers')} value={stats?.verifiedFarmers} iconBg="bg-teal-100"   iconColor="text-teal-700"    loading={loading} />
+            <StatCard icon={Clock}      label={t('pendingVerifications', 'Pending')}  value={stats?.pendingVerifications} iconBg="bg-amber-100" iconColor="text-amber-700" loading={loading} />
           </div>
         </section>
       )}
@@ -174,7 +176,7 @@ export default function AdminDashboard({ onNavigate }) {
       {/* ── MARKETPLACE SECTION ──────────────────────────────────────────── */}
       {(loading || stats) && (
         <section aria-label="Marketplace statistics">
-          <SectionHeading>Marketplace</SectionHeading>
+          <SectionHeading>{t('marketplace', 'Marketplace')}</SectionHeading>
           <div className="grid grid-cols-2 gap-3">
             <StatCard icon={Wheat}       label="Total Crops"     value={stats?.totalCrops}    iconBg="bg-orange-100"  iconColor="text-orange-700"  loading={loading} />
             <StatCard icon={TrendingUp}  label="Available Crops" value={stats?.availableCrops} iconBg="bg-lime-100"   iconColor="text-lime-700"    loading={loading} />
@@ -185,12 +187,12 @@ export default function AdminDashboard({ onNavigate }) {
       {/* ── ORDERS SECTION ───────────────────────────────────────────────── */}
       {(loading || stats) && (
         <section aria-label="Order statistics">
-          <SectionHeading>Orders</SectionHeading>
+          <SectionHeading>{t('myBookings', 'Orders')}</SectionHeading>
           <div className="grid grid-cols-2 gap-3">
-            <StatCard icon={ClipboardList} label="Total Bookings"   value={stats?.totalBookings}     iconBg="bg-violet-100" iconColor="text-violet-700" loading={loading} />
-            <StatCard icon={Clock}         label="Pending"          value={stats?.pendingBookings}   iconBg="bg-amber-100"  iconColor="text-amber-700"  loading={loading} />
-            <StatCard icon={CheckCircle2}  label="Confirmed"        value={stats?.confirmedBookings} iconBg="bg-emerald-100" iconColor="text-emerald-700" loading={loading} />
-            <StatCard icon={Star}          label="Completed"        value={stats?.completedBookings} iconBg="bg-blue-100"   iconColor="text-blue-700"   loading={loading} />
+            <StatCard icon={ClipboardList} label={t('myBookings', 'Total Bookings')}  value={stats?.totalBookings}     iconBg="bg-violet-100" iconColor="text-violet-700" loading={loading} />
+            <StatCard icon={Clock}         label={t('pending', 'Pending')}            value={stats?.pendingBookings}   iconBg="bg-amber-100"  iconColor="text-amber-700"  loading={loading} />
+            <StatCard icon={CheckCircle2}  label={t('confirmed', 'Confirmed')}        value={stats?.confirmedBookings} iconBg="bg-emerald-100" iconColor="text-emerald-700" loading={loading} />
+            <StatCard icon={Star}          label={t('completed', 'Completed')}        value={stats?.completedBookings} iconBg="bg-blue-100"   iconColor="text-blue-700"   loading={loading} />
           </div>
         </section>
       )}
@@ -198,7 +200,7 @@ export default function AdminDashboard({ onNavigate }) {
       {/* ── REVIEWS SECTION ──────────────────────────────────────────────── */}
       {(loading || stats) && (
         <section aria-label="Review statistics">
-          <SectionHeading>Reviews</SectionHeading>
+          <SectionHeading>{t('reviews', 'Reviews')}</SectionHeading>
           <div className="grid grid-cols-2 gap-3">
             <StatCard icon={Star} label="Total Reviews" value={stats?.totalReviews} iconBg="bg-yellow-100" iconColor="text-yellow-700" loading={loading} />
           </div>
@@ -207,14 +209,14 @@ export default function AdminDashboard({ onNavigate }) {
 
       {/* ── QUICK ACTIONS ────────────────────────────────────────────────── */}
       <section aria-label="Admin actions">
-        <SectionHeading>Actions</SectionHeading>
+        <SectionHeading>{t('viewAll', 'Actions')}</SectionHeading>
         <div className="space-y-3">
           <ActionCard
             icon={ShieldCheck}
             iconBg="bg-emerald-100"
             iconColor="text-emerald-700"
-            title="Farmer Verification"
-            subtitle="Review pending farmer documents"
+            title={t('adminVerification', 'Farmer Verification')}
+            subtitle={t('pendingVerifications', 'Review pending farmer documents')}
             badge={stats?.pendingVerifications}
             onClick={() => onNavigate?.('admin-verification')}
           />
@@ -222,8 +224,8 @@ export default function AdminDashboard({ onNavigate }) {
             icon={Users}
             iconBg="bg-violet-100"
             iconColor="text-violet-700"
-            title="User Management"
-            subtitle="Browse and inspect platform users"
+            title={t('adminUsers', 'User Management')}
+            subtitle={t('totalUsers', 'Browse and inspect platform users')}
             onClick={() => onNavigate?.('admin-users')}
           />
         </div>

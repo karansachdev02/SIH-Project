@@ -2,7 +2,7 @@ import React from 'react'
 import { CheckCircle2 } from 'lucide-react'
 
 /**
- * Reusable accessible Role Selection Card component for Smart Mandi.
+ * Reusable accessible Role Selection Card component for KisanMitra.
  */
 export default function RoleCard({
   role,

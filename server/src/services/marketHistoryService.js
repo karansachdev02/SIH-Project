@@ -18,7 +18,9 @@
 import MarketPrice from '../models/MarketPrice.js'
 import { normaliseCropName } from './mandiPriceService.js'
 
-const RESOURCE_ID = process.env.DATA_GOV_RESOURCE_ID || '9ef84268-d588-465a-a308-a864a43d0070'
+// Read at call time in each function so env changes (e.g. in tests) are always picked up.
+// Module-level constant kept only for the safe default — real env value checked per-call.
+const DEFAULT_RESOURCE_ID = '9ef84268-d588-465a-a308-a864a43d0070'
 
 // Sentinel date used when arrivalDate is missing — keeps unique index deterministic
 const MISSING_DATE_SENTINEL = new Date('1970-01-01T00:00:00.000Z')
@@ -84,7 +86,7 @@ function normaliseToDocument(raw) {
     maxPrice,
     modalPrice,
     source: 'data.gov.in',
-    sourceResourceId: RESOURCE_ID,
+    sourceResourceId: process.env.DATA_GOV_RESOURCE_ID || DEFAULT_RESOURCE_ID,
     fetchedAt: new Date(),
   }
 }
@@ -130,7 +132,8 @@ async function fetchRawFromGovApi(opts = {}) {
   if (market)              filters.push(`market:${market}`)
   if (filters.length > 0)  params.set('filters[field]', filters.join(','))
 
-  const url = `https://api.data.gov.in/resource/${RESOURCE_ID}?${params.toString()}`
+  const resourceId = process.env.DATA_GOV_RESOURCE_ID || DEFAULT_RESOURCE_ID
+  const url = `https://api.data.gov.in/resource/${resourceId}?${params.toString()}`
 
   try {
     const controller = new AbortController()

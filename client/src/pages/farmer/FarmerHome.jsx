@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Card from '../../components/common/Card'
 import MarketPriceCard from '../../components/common/MarketPriceCard'
 import { getMarketPrices } from '../../services/marketPriceService'
+import { useLanguage } from '../../context/LanguageContext'
 import {
   Sprout,
   Wheat,
@@ -16,62 +17,8 @@ import {
   Cloud,
   ClipboardList,
   UserCircle,
+  CreditCard,
 } from 'lucide-react'
-
-/**
- * Action cards for the farmer dashboard.
- * `available: false` marks features not yet implemented.
- */
-const ACTION_ITEMS = [
-  {
-    id: 'my-crops',
-    title: 'मेरी फसल',
-    ariaLabel: 'मेरी फसल देखें / My Crops',
-    icon: Wheat,
-    color: 'bg-amber-100 text-amber-800 border-amber-200',
-    available: true,
-  },
-  {
-    id: 'booking-requests',
-    title: 'बुकिंग',
-    ariaLabel: 'बुकिंग अनुरोध / Booking Requests',
-    icon: ClipboardList,
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
-    available: true,
-  },
-  {
-    id: 'price-prediction',
-    title: 'AI भाव',
-    ariaLabel: 'AI मूल्य भविष्यवाणी / AI Price Prediction',
-    icon: Bot,
-    color: 'bg-violet-100 text-violet-800 border-violet-200',
-    available: true,
-  },
-  {
-    id: 'weather',
-    title: 'मौसम',
-    ariaLabel: 'मौसम / Weather',
-    icon: Cloud,
-    color: 'bg-sky-100 text-sky-800 border-sky-200',
-    available: true,
-  },
-  {
-    id: 'profile',
-    title: 'प्रोफ़ाइल',
-    ariaLabel: 'मेरी प्रोफ़ाइल / My Profile',
-    icon: UserCircle,
-    color: 'bg-slate-100 text-slate-700 border-slate-200',
-    available: true,
-  },
-  {
-    id: 'transport',
-    title: 'ट्रांसपोर्ट',
-    ariaLabel: 'परिवहन सेवाएं / Transport — जल्द आ रहा है',
-    icon: Truck,
-    color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    available: false,
-  },
-]
 
 /**
  * Farmer Home Dashboard.
@@ -81,6 +28,7 @@ const ACTION_ITEMS = [
  *   onNavigate — (viewKey: string) => void  callback into App.jsx currentView system
  */
 export default function FarmerHome({ user, onNavigate }) {
+  const { language, t } = useLanguage()
   const [comingSoonId, setComingSoonId] = useState(null)
 
   // ── Market price state ────────────────────────────────────────────────────
@@ -108,14 +56,86 @@ export default function FarmerHome({ user, onNavigate }) {
     return () => { cancelled = true }
   }, [])
 
+  // ── Action cards — defined inside component so t() is always current ──────
+  const ACTION_ITEMS = [
+    {
+      id: 'my-crops',
+      titleKey: 'actionMyCrops',
+      icon: Wheat,
+      color: 'bg-amber-100 text-amber-800 border-amber-200',
+      available: true,
+    },
+    {
+      id: 'booking-requests',
+      titleKey: 'actionBookings',
+      icon: ClipboardList,
+      color: 'bg-blue-100 text-blue-800 border-blue-200',
+      available: true,
+    },
+    {
+      id: 'delivery-management',
+      titleKey: 'actionDelivery',
+      icon: Truck,
+      color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      available: true,
+    },
+    {
+      id: 'farmer-transactions',
+      titleKey: 'actionTransactions',
+      icon: CreditCard,
+      color: 'bg-violet-100 text-violet-800 border-violet-200',
+      available: true,
+    },
+    {
+      id: 'price-prediction',
+      titleKey: 'actionAiPrice',
+      icon: Bot,
+      color: 'bg-violet-100 text-violet-800 border-violet-200',
+      available: true,
+    },
+    {
+      id: 'weather',
+      titleKey: 'actionWeather',
+      icon: Cloud,
+      color: 'bg-sky-100 text-sky-800 border-sky-200',
+      available: true,
+    },
+    {
+      id: 'profile',
+      titleKey: 'actionProfile',
+      icon: UserCircle,
+      color: 'bg-slate-100 text-slate-700 border-slate-200',
+      available: true,
+    },
+  ]
+
   // Derive display values safely — gracefully handle missing fields
-  const farmerName = user?.name || 'किसान'
+  const farmerName = user?.name || t('farmer', 'Farmer')
+  const role = user?.role || null
   const mobile = user?.mobile || null
   const state = user?.state || null
   const district = user?.district || null
   const village = user?.village || null
   const verificationStatus = user?.verificationStatus || null
   const isVerified = verificationStatus === 'verified'
+
+  // Role-correct badge label and visibility:
+  //   farmer + verified  → 'Verified Farmer'
+  //   buyer (always)     → 'Verified Buyer'   (buyers are always authenticated/verified)
+  //   admin              → 'Administrator'
+  const roleBadgeLabel =
+    role === 'admin'  ? t('adminBadge', 'Administrator') :
+    role === 'buyer'  ? t('verifiedBuyer', 'Verified Buyer') :
+    t('verifiedFarmer', 'Verified Farmer')
+
+  // Show badge when:
+  //   farmer → only if verificationStatus === 'verified'
+  //   buyer  → always (they are always authenticated at this view)
+  //   admin  → always
+  const showRoleBadge =
+    role === 'admin' ? true :
+    role === 'buyer' ? true :
+    isVerified   // farmer: only if verified
 
   // Location string — show only filled fields
   const locationParts = [village, district, state].filter(Boolean)
@@ -142,20 +162,20 @@ export default function FarmerHome({ user, onNavigate }) {
                 id="greeting-heading"
                 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight"
               >
-                नमस्ते, {farmerName}
+                {t('namasteGreeting', 'Hello')}, {farmerName}
               </h1>
               <span className="text-2xl" role="img" aria-label="waving hand">👋</span>
             </div>
 
             <p className="text-base sm:text-lg text-emerald-800 font-medium">
-              आज अपनी फसल का बेहतर भाव खोजें
+              {t('farmerHomeSubtitle', 'Find the best price for your crop today')}
             </p>
 
-            {/* Verification badge */}
-            {isVerified && (
+            {/* Role badge — role-correct label for farmer/buyer/admin */}
+            {showRoleBadge && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold border border-emerald-200">
                 <CheckCircle2 size={13} />
-                सत्यापित किसान / Verified Farmer
+                {roleBadgeLabel}
               </span>
             )}
           </div>
@@ -192,14 +212,14 @@ export default function FarmerHome({ user, onNavigate }) {
           <div className="bg-gradient-to-br from-emerald-900 via-emerald-850 to-teal-900 rounded-2xl p-6 flex items-center justify-center min-h-[140px] shadow-xl">
             <div className="flex items-center gap-3 text-emerald-300">
               <Loader2 size={24} className="animate-spin" aria-hidden="true" />
-              <span className="text-sm font-medium">मंडी भाव लोड हो रहे हैं…</span>
+              <span className="text-sm font-medium">{t('loadingMarketPrices', 'Loading market prices…')}</span>
             </div>
           </div>
         ) : (
           <div
             role="button"
             tabIndex={0}
-            aria-label="मंडी भाव देखें / View market prices"
+            aria-label={t('viewMarketPrices', 'View market prices')}
             onClick={() => onNavigate?.('prices')}
             onKeyDown={(e) => e.key === 'Enter' && onNavigate?.('prices')}
             className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 rounded-2xl"
@@ -209,8 +229,8 @@ export default function FarmerHome({ user, onNavigate }) {
                 commodity: 'Wheat',
                 variety: 'Common',
                 market: 'Sample Market',
-                district: '–',
-                state: '–',
+                district: '\u2013',
+                state: '\u2013',
                 modalPrice: 2450,
                 minPrice: 2200,
                 maxPrice: 2650,
@@ -219,13 +239,14 @@ export default function FarmerHome({ user, onNavigate }) {
               }}
               variant="hero"
               isFallback={priceSource === 'fallback' || !priceData}
+              locale={language}
             />
           </div>
         )}
       </section>
 
       {/* ── 3. PRIMARY ACTION GRID ───────────────────────────────────────── */}
-      <section aria-label="मुख्य कार्य / Primary Actions">
+      <section aria-label={t('primaryActions', 'Primary Actions')}>
         {/* Coming soon toast */}
         {comingSoonId && (
           <div
@@ -233,20 +254,21 @@ export default function FarmerHome({ user, onNavigate }) {
             aria-live="polite"
             className="mb-3 px-4 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-medium text-center shadow-lg"
           >
-            जल्द आ रहा है / Coming soon
+            {t('comingSoon', 'Coming soon')}
           </div>
         )}
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
           {ACTION_ITEMS.map((item) => {
             const Icon = item.icon
+            const label = t(item.titleKey, item.id)
             const isComingSoon = comingSoonId === item.id
 
             return (
               <button
                 key={item.id}
                 type="button"
-                aria-label={item.ariaLabel}
+                aria-label={label}
                 aria-disabled={!item.available}
                 onClick={() => {
                   if (item.available) {
@@ -267,17 +289,17 @@ export default function FarmerHome({ user, onNavigate }) {
                   <Icon size={30} aria-hidden="true" />
                 </div>
                 <span
-                  className={`text-base sm:text-lg font-bold transition-colors ${
+                  className={`text-base sm:text-lg font-bold transition-colors text-center ${
                     item.available
                       ? 'text-slate-800 group-hover:text-emerald-800'
                       : 'text-slate-500'
                   }`}
                 >
-                  {item.title}
+                  {label}
                 </span>
                 {!item.available && (
                   <span className="mt-1 text-[10px] font-semibold text-slate-400 tracking-wide uppercase">
-                    जल्द आ रहा है
+                    {t('comingSoon', 'Coming soon')}
                   </span>
                 )}
                 {isComingSoon && (
@@ -300,25 +322,25 @@ export default function FarmerHome({ user, onNavigate }) {
               id="advice-heading"
               className="text-base sm:text-lg font-bold text-amber-950 flex items-center gap-2"
             >
-              <span>आज की सलाह</span>
+              <span>{t('todaysTip', "Today's Tip")}</span>
             </h3>
             <p className="text-sm sm:text-base text-amber-900/90 font-medium leading-relaxed">
-              आपके पास के खरीदार बेहतर भाव दे सकते हैं।
+              {t('farmerTip', 'Nearby buyers may offer better prices for your crops.')}
             </p>
           </div>
         </Card>
       </section>
 
       {/* ── 5. SELL CROP CTA — navigates to My Crops management page ── */}
-      <section aria-label="फसल बिक्री / Sell Crop">
+      <section aria-label={t('sellCrop', 'Sell Crop')}>
         <button
           type="button"
-          aria-label="मेरी फसल जोड़ें / Add My Crop"
+          aria-label={t('sellCropCta', 'Sell Crop')}
           onClick={() => onNavigate?.('my-crops')}
           className="w-full flex items-center justify-center gap-3 py-4 px-6 text-xl font-extrabold rounded-2xl bg-emerald-600 text-white border-2 border-emerald-600 transition-colors hover:bg-emerald-700 hover:border-emerald-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-md shadow-emerald-600/20"
         >
           <Sprout size={28} aria-hidden="true" />
-          <span>फसल बेचें</span>
+          <span>{t('sellCropCta', 'Sell Crop')}</span>
           <ChevronRight size={20} className="ml-auto" aria-hidden="true" />
         </button>
       </section>

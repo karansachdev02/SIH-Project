@@ -3,7 +3,7 @@ import { request } from './api'
 /**
  * weatherService.js (frontend)
  *
- * Calls the Smart Mandi backend weather endpoints.
+ * Calls the KisanMitra backend weather endpoints.
  *
  * Architecture:
  *   React -> /api/weather/* (own Express backend)

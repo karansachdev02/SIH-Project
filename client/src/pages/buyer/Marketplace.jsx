@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
 import Card from '../../components/common/Card'
 import MarketplaceCropCard from '../../components/common/MarketplaceCropCard'
+import VoiceInput from '../../components/common/VoiceInput'
 import { getMarketplaceCrops } from '../../services/marketplaceService'
+import { useLanguage } from '../../context/LanguageContext'
 import {
   ShoppingBag,
   Search,
@@ -17,6 +19,7 @@ import {
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 function EmptyState({ hasFilters, onClear }) {
+  const { t } = useLanguage()
   return (
     <div className="py-14 flex flex-col items-center gap-4 text-center">
       <div className="w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
@@ -24,12 +27,12 @@ function EmptyState({ hasFilters, onClear }) {
       </div>
       <div className="space-y-1">
         <p className="font-bold text-slate-700">
-          {hasFilters ? 'No crops match your filters' : 'No crops are currently available.'}
+          {hasFilters ? t('noCropsMatch', 'No crops match your filters') : t('noCropsAvailable', 'No crops are currently available.')}
         </p>
         <p className="text-sm text-slate-500">
           {hasFilters
-            ? 'Try adjusting your search or filters.'
-            : 'Check back soon — farmers are adding listings.'}
+            ? t('tryAdjustFilters', 'Try adjusting your search or filters.')
+            : t('checkBackSoon', 'Check back soon — farmers are adding listings.')}
         </p>
       </div>
       {hasFilters && (
@@ -38,7 +41,7 @@ function EmptyState({ hasFilters, onClear }) {
           onClick={onClear}
           className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
         >
-          Clear Filters
+          {t('clearFilters', 'Clear Filters')}
         </button>
       )}
     </div>
@@ -54,6 +57,7 @@ function EmptyState({ hasFilters, onClear }) {
  *   onNavigate  (viewKey, params?) => void  — App.jsx navigation callback
  */
 export default function Marketplace({ onNavigate }) {
+  const { t } = useLanguage()
   // ── Search / filter state ─────────────────────────────────────────────────
   const [search,    setSearch]    = useState('')
   const [state,     setState]     = useState('')
@@ -141,7 +145,7 @@ export default function Marketplace({ onNavigate }) {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          aria-label="Go back"
+          aria-label={t('back', 'Go back')}
           onClick={() => onNavigate?.('buyer-authenticated')}
           className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
         >
@@ -150,13 +154,13 @@ export default function Marketplace({ onNavigate }) {
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
             <ShoppingBag size={22} className="text-emerald-600" aria-hidden="true" />
-            Marketplace
+            {t('marketplaceTitle', 'Marketplace')}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">Find crops directly from farmers</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t('marketplaceSublabel', 'Browse crops from verified farmers')}</p>
         </div>
         {count > 0 && !loading && (
           <span className="ml-auto px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
-            {count} listing{count !== 1 ? 's' : ''}
+            {count} {count !== 1 ? t('cropsFound', 'crops found') : t('cropAvailable', 'crop available')}
           </span>
         )}
       </div>
@@ -164,7 +168,7 @@ export default function Marketplace({ onNavigate }) {
       {/* ── SEARCH + FILTER FORM ────────────────────────────────────────── */}
       <Card className="p-4">
         <form onSubmit={handleSearch} className="space-y-3">
-          {/* Search bar */}
+          {/* Search bar + voice input */}
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search
@@ -176,8 +180,8 @@ export default function Marketplace({ onNavigate }) {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search crops, type, or location…"
-                className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                placeholder={t('searchCrops', 'Search crops…')}
+                className="w-full pl-9 pr-9 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
               />
               {search && (
                 <button
@@ -190,11 +194,18 @@ export default function Marketplace({ onNavigate }) {
                 </button>
               )}
             </div>
+            {/* Voice input — populates search field */}
+            <VoiceInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Search crops…"
+              className="shrink-0"
+            />
             <button
               type="submit"
               className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0"
             >
-              Search
+              {t('search', 'Search')}
             </button>
           </div>
 
@@ -205,7 +216,7 @@ export default function Marketplace({ onNavigate }) {
             className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-emerald-700 transition-colors focus:outline-none"
           >
             <SlidersHorizontal size={14} aria-hidden="true" />
-            <span>Filters</span>
+            <span>{t('filterLabel', 'Filter')}</span>
             {filtersOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             {hasFilters && (
               <span className="ml-1 px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">
@@ -218,7 +229,7 @@ export default function Marketplace({ onNavigate }) {
           {filtersOpen && (
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">State</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('state', 'State')}</label>
                 <input
                   type="text"
                   value={state}
@@ -228,7 +239,7 @@ export default function Marketplace({ onNavigate }) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">District</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('district', 'District')}</label>
                 <input
                   type="text"
                   value={district}
@@ -238,7 +249,7 @@ export default function Marketplace({ onNavigate }) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Min Price (₹)</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('minPriceLabel', 'Min Price')} (₹)</label>
                 <input
                   type="number"
                   value={minPrice}
@@ -249,7 +260,7 @@ export default function Marketplace({ onNavigate }) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Max Price (₹)</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('maxPriceLabel', 'Max Price')} (₹)</label>
                 <input
                   type="number"
                   value={maxPrice}
@@ -276,7 +287,7 @@ export default function Marketplace({ onNavigate }) {
                 onClick={handleClearAll}
                 className="text-xs text-rose-600 hover:underline ml-1 focus:outline-none"
               >
-                Clear all
+                {t('clearFilters', 'Clear all')}
               </button>
             </div>
           )}
@@ -292,7 +303,7 @@ export default function Marketplace({ onNavigate }) {
             onClick={() => fetchCrops({})}
             className="text-xs font-semibold underline hover:no-underline shrink-0"
           >
-            Retry
+            {t('retry', 'Retry')}
           </button>
         </div>
       )}
@@ -301,7 +312,7 @@ export default function Marketplace({ onNavigate }) {
       {loading && (
         <div className="py-12 flex flex-col items-center gap-3 text-slate-500">
           <Loader2 size={28} className="animate-spin text-emerald-500" aria-hidden="true" />
-          <p className="text-sm font-medium">Loading available crops…</p>
+          <p className="text-sm font-medium">{t('loading', 'Loading...')}</p>
         </div>
       )}
 

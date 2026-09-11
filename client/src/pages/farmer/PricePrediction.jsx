@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from 'react'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
+import SpeakButton from '../../components/common/SpeakButton'
+import { useLanguage } from '../../context/LanguageContext'
 import { getPricePrediction } from '../../services/predictionService'
 import {
   Bot,
@@ -18,23 +20,10 @@ import {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HORIZON_OPTIONS = [
-  { value: 1,  label: '1 दिन / 1 Day' },
-  { value: 7,  label: '7 दिन / 1 Week' },
-  { value: 14, label: '14 दिन / 2 Weeks' },
-  { value: 30, label: '30 दिन / 1 Month' },
-]
-
 const COMMON_CROPS = [
   'Wheat', 'Paddy', 'Maize', 'Onion', 'Potato', 'Tomato',
   'Soyabean', 'Cotton', 'Mustard', 'Gram', 'Bajra', 'Jowar',
 ]
-
-const CONFIDENCE_CONFIG = {
-  high:   { label: 'उच्च / High',   color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  medium: { label: 'मध्यम / Medium', color: 'bg-amber-100   text-amber-800   border-amber-200' },
-  low:    { label: 'कम / Low',       color: 'bg-rose-100    text-rose-800    border-rose-200' },
-}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -44,14 +33,14 @@ function TrendIcon({ direction, size = 20 }) {
   return <Minus size={size} className="text-slate-400" />
 }
 
-function TrendLabel({ direction }) {
-  if (direction === 'rising')  return <span className="text-emerald-700 font-semibold">बढ़त / Rising</span>
-  if (direction === 'falling') return <span className="text-rose-700    font-semibold">गिरावट / Falling</span>
-  return <span className="text-slate-500 font-semibold">स्थिर / Stable</span>
+function TrendLabel({ direction, t }) {
+  if (direction === 'rising')  return <span className="text-emerald-700 font-semibold">{t('rising', 'Rising')}</span>
+  if (direction === 'falling') return <span className="text-rose-700    font-semibold">{t('falling', 'Falling')}</span>
+  return <span className="text-slate-500 font-semibold">{t('stable', 'Stable')}</span>
 }
 
 function EngineTag({ engine }) {
-  if (engine === 'gemini-1.5-flash') {
+  if (typeof engine === 'string' && engine.startsWith('gemini-')) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-100 text-violet-800 border border-violet-200 text-xs font-semibold">
         <Bot size={11} />
@@ -83,6 +72,23 @@ function StatRow({ label, value }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function PricePrediction({ onNavigate }) {
+  const { locale, t } = useLanguage()
+
+  // ── Horizon options — derived inside render so they are always translated ──
+  const HORIZON_OPTIONS = [
+    { value: 1,  label: `1 ${t('date', 'Day')} / 1 Day` },
+    { value: 7,  label: `7 ${t('date', 'Days')} / 1 Week` },
+    { value: 14, label: `14 ${t('date', 'Days')} / 2 Weeks` },
+    { value: 30, label: `30 ${t('date', 'Days')} / 1 Month` },
+  ]
+
+  // ── Confidence config — translated ────────────────────────────────────────
+  const CONFIDENCE_CONFIG = {
+    high:   { label: t('confidenceHigh', 'High'),   color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    medium: { label: t('confidenceMedium', 'Medium'), color: 'bg-amber-100   text-amber-800   border-amber-200' },
+    low:    { label: t('confidenceLow', 'Low'),       color: 'bg-rose-100    text-rose-800    border-rose-200' },
+  }
+
   // ── Form state ────────────────────────────────────────────────────────────
   const [commodity, setCommodity] = useState('Wheat')
   const [customCrop, setCustomCrop] = useState('')
@@ -112,12 +118,12 @@ export default function PricePrediction({ onNavigate }) {
       const data = await getPricePrediction(opts)
       setResult(data)
     } catch (err) {
-      setError(err?.message || 'भविष्यवाणी सेवा अनुपलब्ध है। / Prediction service unavailable.')
+      setError(err?.message || t('predicting', 'Prediction service unavailable.'))
       setResult(null)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   // Auto-fetch on mount with defaults
   useEffect(() => {
@@ -163,7 +169,7 @@ export default function PricePrediction({ onNavigate }) {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          aria-label="वापस जाएं / Go back"
+          aria-label={t('goBack', 'Go back')}
           onClick={() => onNavigate?.('home')}
           className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
         >
@@ -172,9 +178,9 @@ export default function PricePrediction({ onNavigate }) {
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
             <Bot size={22} className="text-violet-600" />
-            AI मूल्य भविष्यवाणी
+            {t('predictionTitle', 'AI Price Prediction')}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">Price Prediction — Powered by market history & AI</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t('predictionSubtitle', 'Price Prediction — Powered by market history & AI')}</p>
         </div>
       </div>
 
@@ -185,7 +191,7 @@ export default function PricePrediction({ onNavigate }) {
           {/* Crop selector */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
-              फसल / Crop <span className="text-rose-500">*</span>
+              {t('cropLabel', 'Crop')} <span className="text-rose-500">*</span>
             </label>
 
             {/* Quick-pick buttons */}
@@ -214,7 +220,7 @@ export default function PricePrediction({ onNavigate }) {
               onClick={() => { setUseCustom((v) => !v); setCustomCrop('') }}
               className="text-xs text-emerald-600 hover:underline focus:outline-none"
             >
-              {useCustom ? '← Quick pick crop list' : '+ Enter crop manually'}
+              {useCustom ? t('backToQuickPick', '← Quick pick crop list') : t('customCrop', '+ Enter crop manually')}
             </button>
 
             {useCustom && (
@@ -231,7 +237,7 @@ export default function PricePrediction({ onNavigate }) {
           {/* Location (optional) */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">राज्य / State</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">{t('state', 'State')}</label>
               <input
                 type="text"
                 value={state}
@@ -241,7 +247,7 @@ export default function PricePrediction({ onNavigate }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">जिला / District</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">{t('district', 'District')}</label>
               <input
                 type="text"
                 value={district}
@@ -256,7 +262,7 @@ export default function PricePrediction({ onNavigate }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
-                कितने दिन आगे? / Predict Ahead
+                {t('predictAhead', 'Predict Ahead')}
               </label>
               <select
                 value={horizon}
@@ -270,18 +276,18 @@ export default function PricePrediction({ onNavigate }) {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
-                इतिहास / History Window
+                {t('historyWindow', 'History Window')}
               </label>
               <select
                 value={lookback}
                 onChange={(e) => setLookback(Number(e.target.value))}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
               >
-                <option value={30}>30 दिन / 30 Days</option>
-                <option value={60}>60 दिन / 60 Days</option>
-                <option value={90}>90 दिन / 90 Days</option>
-                <option value={180}>180 दिन / 6 Months</option>
-                <option value={365}>365 दिन / 1 Year</option>
+                <option value={30}>30 Days</option>
+                <option value={60}>60 Days</option>
+                <option value={90}>90 Days</option>
+                <option value={180}>180 Days / 6 Months</option>
+                <option value={365}>365 Days / 1 Year</option>
               </select>
             </div>
           </div>
@@ -296,12 +302,12 @@ export default function PricePrediction({ onNavigate }) {
             {loading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                <span>भविष्यवाणी हो रही है…</span>
+                <span>{t('predicting', 'Analysing…')}</span>
               </>
             ) : (
               <>
                 <Bot size={16} />
-                <span>भाव भविष्यवाणी करें / Predict Price</span>
+                <span>{t('predictPrice', 'Predict Price')}</span>
               </>
             )}
           </Button>
@@ -320,13 +326,13 @@ export default function PricePrediction({ onNavigate }) {
       {!loading && !error && result && !hasPrediction && (
         <Card className="p-6 text-center space-y-3">
           <BarChart3 size={36} className="mx-auto text-slate-300" />
-          <p className="font-bold text-slate-700">ऐतिहासिक डेटा नहीं मिला</p>
+          <p className="font-bold text-slate-700">{t('noHistoricalData', 'No historical data found')}</p>
           <p className="text-sm text-slate-500">
             {result.reasoning || 'Please fetch market history first via the Prices page, then retry.'}
           </p>
           <Button variant="outline" size="sm" onClick={() => onNavigate?.('prices')}>
             <BarChart3 size={14} />
-            <span>Prices page खोलें</span>
+            <span>{t('goToPricesPage', 'Open Prices page')}</span>
           </Button>
         </Card>
       )}
@@ -341,7 +347,7 @@ export default function PricePrediction({ onNavigate }) {
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <p className="text-violet-300 text-sm font-medium uppercase tracking-wide">
-                    {result.commodity} — {horizon} दिन बाद / {horizon} day{horizon !== 1 ? 's' : ''} ahead
+                    {result.commodity} — {horizon} {t('date', 'days')} / {horizon} day{horizon !== 1 ? 's' : ''} ahead
                   </p>
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl sm:text-5xl font-extrabold tracking-tight">
@@ -352,33 +358,41 @@ export default function PricePrediction({ onNavigate }) {
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
                     <div className="flex items-center gap-1.5">
                       <TrendIcon direction={trend} size={18} />
-                      <TrendLabel direction={trend} />
+                      <TrendLabel direction={trend} t={t} />
                     </div>
                     {conf && (
                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${conf.color}`}>
-                        आत्मविश्वास: {conf.label}
+                        {t('confidence', 'Confidence')}: {conf.label}
                       </span>
                     )}
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <EngineTag engine={result.engine} />
-                  <button
-                    type="button"
-                    aria-label="रीफ्रेश करें / Refresh prediction"
-                    onClick={handleRefresh}
-                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
-                    disabled={loading}
-                  >
-                    <RefreshCw size={16} />
-                  </button>
-                </div>
+                   <EngineTag engine={result.engine} />
+                   <div className="flex items-center gap-1">
+                     <SpeakButton
+                       text={`${result.commodity} predicted price is ${result.predicted} rupees per quintal. Trend is ${trend}. Confidence is ${result.confidence}.${result.reasoning ? ' ' + result.reasoning : ''}`}
+                       language={locale}
+                       label="Read prediction"
+                       className="bg-white/10 hover:bg-white/20 text-white"
+                     />
+                     <button
+                       type="button"
+                       aria-label={t('refresh', 'Refresh prediction')}
+                       onClick={handleRefresh}
+                       className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                       disabled={loading}
+                     >
+                       <RefreshCw size={16} />
+                     </button>
+                   </div>
+                 </div>
               </div>
 
               {/* Gemini reasoning */}
               {result.reasoning && (
                 <p className="mt-4 text-sm text-violet-200 bg-white/10 rounded-xl px-4 py-3 leading-relaxed">
-                  "{result.reasoning}"
+                  &ldquo;{result.reasoning}&rdquo;
                 </p>
               )}
             </div>
@@ -400,7 +414,7 @@ export default function PricePrediction({ onNavigate }) {
               >
                 <span className="font-bold text-slate-800 flex items-center gap-2">
                   <BarChart3 size={16} className="text-slate-500" />
-                  आधार डेटा सारांश / Data Summary ({result.dataPoints} records)
+                  {t('dataSummary', 'Data Summary')} ({result.dataPoints} records)
                 </span>
                 {summaryOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
@@ -429,13 +443,13 @@ export default function PricePrediction({ onNavigate }) {
               <Info size={18} className="text-blue-600 mt-0.5 shrink-0" />
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-blue-900">
-                  बेहतर भविष्यवाणी के लिए / For better predictions:
+                  {t('betterPrediction', 'For better predictions:')}
                 </p>
                 <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside leading-relaxed">
-                  <li>Prices page से ताज़ा मंडी डेटा लाएं</li>
-                  <li>राज्य और जिला भरने से स्थानीय भाव मिलेगा</li>
-                  <li>अधिक इतिहास = अधिक सटीक भविष्यवाणी</li>
-                  <li>Gemini AI के लिए GEMINI_API_KEY सर्वर पर लगाएं</li>
+                  <li>{t('predictionTip1', 'Fetch fresh mandi data from the Prices page')}</li>
+                  <li>{t('predictionTip2', 'Adding state & district gives local prices')}</li>
+                  <li>{t('predictionTip3', 'More history = more accurate prediction')}</li>
+                  <li>{t('predictionTip4', 'Add GEMINI_API_KEY on server for Gemini AI')}</li>
                 </ul>
               </div>
             </div>
@@ -450,7 +464,7 @@ export default function PricePrediction({ onNavigate }) {
             <Loader2 size={28} className="animate-spin" />
           </div>
           <p className="text-slate-600 font-medium text-center">
-            भविष्यवाणी हो रही है… / Analysing {effectiveCommodity} price data…
+            {t('predicting', 'Analysing…')} {effectiveCommodity}…
           </p>
           <p className="text-xs text-slate-400">
             Fetching market history &amp; computing prediction

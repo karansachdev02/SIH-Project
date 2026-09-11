@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
+import { useLanguage } from '../../context/LanguageContext'
 import { getMyCrops, createCrop, updateCrop, deleteCrop } from '../../services/cropService'
 import {
   Wheat,
@@ -674,6 +675,7 @@ function CropCard({ crop, onEdit, onDelete }) {
  *   onNavigate — (viewKey: string) => void  callback into App.jsx currentView system
  */
 export default function MyCrops({ onNavigate }) {
+  const { t } = useLanguage()
   const [crops, setCrops] = useState([])
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(null)
@@ -779,9 +781,8 @@ export default function MyCrops({ onNavigate }) {
                 id="my-crops-heading"
                 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight"
               >
-                मेरी फसल
+                {t('myCropsTitle', 'My Crops')}
               </h1>
-              <p className="text-xs text-slate-500 font-medium">My Crops</p>
             </div>
           </div>
 
@@ -789,10 +790,10 @@ export default function MyCrops({ onNavigate }) {
             variant="outline"
             size="sm"
             onClick={() => onNavigate?.('home')}
-            aria-label="होम पर जाएं / Go to Home"
+            aria-label={t('goHome', 'Go to Home')}
           >
             <Home size={16} />
-            <span className="hidden sm:inline">होम</span>
+            <span className="hidden sm:inline">{t('goHome', 'Home')}</span>
           </Button>
         </div>
       </section>

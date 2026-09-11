@@ -21,6 +21,7 @@ import {
   getDocumentFileUrl,
 } from '../../services/verificationService'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 
 // ─── Status badge helper ──────────────────────────────────────────────────────
 function StatusBadge({ status }) {
@@ -45,14 +46,14 @@ function StatusBadge({ status }) {
 }
 
 // ─── Reject Modal ─────────────────────────────────────────────────────────────
-function RejectModal({ doc, onConfirm, onCancel, submitting }) {
+function RejectModal({ doc, onConfirm, onCancel, submitting, t }) {
   const [reason, setReason] = useState('')
   const [localError, setLocalError] = useState('')
 
   const handleSubmit = () => {
     const trimmed = reason.trim()
     if (!trimmed) {
-      setLocalError('Rejection reason is required and cannot be empty')
+      setLocalError(t('rejectionReasonRequired'))
       return
     }
     setLocalError('')
@@ -64,18 +65,18 @@ function RejectModal({ doc, onConfirm, onCancel, submitting }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
         <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
           <XCircle size={20} className="text-rose-600" />
-          Reject Verification
+          {t('rejectVerificationTitle')}
         </h2>
         <p className="text-sm text-slate-600">
-          Farmer: <strong>{doc.farmer?.name}</strong> ({doc.farmer?.mobile})
+          {t('farmer')}: <strong>{doc.farmer?.name}</strong> ({doc.farmer?.mobile})
         </p>
         <p className="text-sm text-slate-600">
-          Document: <strong>{doc.originalFileName}</strong>
+          {t('docTypeFarmerId', 'Document')}: <strong>{doc.originalFileName}</strong>
         </p>
 
         <div className="space-y-1.5">
           <label className="block text-sm font-bold text-slate-800">
-            Rejection Reason <span className="text-rose-600">*</span>
+            {t('rejectionReason')} <span className="text-rose-600">*</span>
           </label>
           <textarea
             rows={3}
@@ -84,7 +85,7 @@ function RejectModal({ doc, onConfirm, onCancel, submitting }) {
               setReason(e.target.value)
               if (localError) setLocalError('')
             }}
-            placeholder="Explain clearly why the document is rejected…"
+            placeholder={t('rejectionPlaceholder')}
             className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 resize-none focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white"
           />
           {localError && (
@@ -102,7 +103,7 @@ function RejectModal({ doc, onConfirm, onCancel, submitting }) {
             onClick={onCancel}
             className="flex-1"
           >
-            Cancel
+            {t('cancel')}
           </Button>
           <button
             type="button"
@@ -110,7 +111,7 @@ function RejectModal({ doc, onConfirm, onCancel, submitting }) {
             onClick={handleSubmit}
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-2xl bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[40px]"
           >
-            {submitting ? 'Rejecting…' : 'Confirm Reject'}
+            {submitting ? t('rejectingLabel') : t('confirmReject')}
           </button>
         </div>
       </div>
@@ -119,19 +120,19 @@ function RejectModal({ doc, onConfirm, onCancel, submitting }) {
 }
 
 // ─── Approve Confirmation Modal ───────────────────────────────────────────────
-function ApproveModal({ doc, onConfirm, onCancel, submitting }) {
+function ApproveModal({ doc, onConfirm, onCancel, submitting, t }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
         <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
           <CheckCircle2 size={20} className="text-emerald-600" />
-          Approve Verification
+          {t('approveVerificationTitle')}
         </h2>
         <p className="text-sm text-slate-600">
-          Farmer: <strong>{doc.farmer?.name}</strong> ({doc.farmer?.mobile})
+          {t('farmer')}: <strong>{doc.farmer?.name}</strong> ({doc.farmer?.mobile})
         </p>
         <p className="text-sm text-slate-600">
-          This will set the farmer's status to <strong>Verified</strong> and allow them to log in.
+          {t('willSetVerified')}
         </p>
         <div className="flex gap-3 pt-1">
           <Button
@@ -141,7 +142,7 @@ function ApproveModal({ doc, onConfirm, onCancel, submitting }) {
             onClick={onCancel}
             className="flex-1"
           >
-            Cancel
+            {t('cancel')}
           </Button>
           <Button
             variant="primary"
@@ -150,7 +151,7 @@ function ApproveModal({ doc, onConfirm, onCancel, submitting }) {
             onClick={onConfirm}
             className="flex-1"
           >
-            {submitting ? 'Approving…' : 'Confirm Approve'}
+            {submitting ? t('approvingLabel') : t('confirmApprove')}
           </Button>
         </div>
       </div>
@@ -159,12 +160,12 @@ function ApproveModal({ doc, onConfirm, onCancel, submitting }) {
 }
 
 // ─── Document Card ────────────────────────────────────────────────────────────
-function DocumentCard({ doc, onApprove, onReject, onView }) {
+function DocumentCard({ doc, onApprove, onReject, onView, t }) {
   const docTypeLabels = {
-    farmer_id: 'Farmer ID',
-    land_record: 'Land Record',
-    kisan_credit_card: 'Kisan Credit Card',
-    other: 'Other',
+    farmer_id: t('docTypeFarmerId'),
+    land_record: t('docTypeLandRecord'),
+    kisan_credit_card: t('docTypeKisanCredit'),
+    other: t('docTypeOther'),
   }
 
   return (
@@ -213,23 +214,23 @@ function DocumentCard({ doc, onApprove, onReject, onView }) {
       {/* Dates */}
       <div className="text-xs text-slate-500 space-y-0.5">
         <p>
-          Uploaded:{' '}
+          {t('uploadedLabel')}:{' '}
           <span className="font-medium text-slate-700">
             {new Date(doc.uploadedAt).toLocaleString()}
           </span>
         </p>
         {doc.reviewedAt && (
           <p>
-            Reviewed:{' '}
+            {t('reviewedByLabel')}:{' '}
             <span className="font-medium text-slate-700">
               {new Date(doc.reviewedAt).toLocaleString()}
             </span>
-            {doc.reviewedBy && ` by ${doc.reviewedBy.name}`}
+            {doc.reviewedBy && ` ${t('byLabel')} ${doc.reviewedBy.name}`}
           </p>
         )}
         {doc.status === 'rejected' && doc.rejectionReason && (
           <p className="text-rose-700 font-medium mt-1">
-            Reason: {doc.rejectionReason}
+            {t('reasonLabel')}: {doc.rejectionReason}
           </p>
         )}
       </div>
@@ -243,7 +244,7 @@ function DocumentCard({ doc, onApprove, onReject, onView }) {
           className="text-xs"
         >
           <Eye size={14} />
-          View Document
+          {t('viewDocumentBtn')}
         </Button>
 
         {doc.status === 'pending' && (
@@ -255,7 +256,7 @@ function DocumentCard({ doc, onApprove, onReject, onView }) {
               className="text-xs"
             >
               <CheckCircle2 size={14} />
-              Approve
+              {t('approveBtn')}
             </Button>
             <button
               type="button"
@@ -263,7 +264,7 @@ function DocumentCard({ doc, onApprove, onReject, onView }) {
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors min-h-[40px]"
             >
               <XCircle size={14} />
-              Reject
+              {t('rejectBtn')}
             </button>
           </>
         )}
@@ -273,14 +274,16 @@ function DocumentCard({ doc, onApprove, onReject, onView }) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-const TABS = [
-  { key: 'pending', label: 'Pending' },
-  { key: 'approved', label: 'Approved' },
-  { key: 'rejected', label: 'Rejected' },
-]
 
 export default function FarmerVerification() {
   const { token } = useAuth()
+  const { t } = useLanguage()
+
+  const TABS = [
+    { key: 'pending',  labelKey: 'pending' },
+    { key: 'approved', labelKey: 'approveBtn' },
+    { key: 'rejected', labelKey: 'rejectBtn' },
+  ]
 
   const [activeTab, setActiveTab] = useState('pending')
   const [documents, setDocuments] = useState([])
@@ -300,12 +303,12 @@ export default function FarmerVerification() {
       const res = await adminListDocuments(activeTab)
       setDocuments(res.documents || [])
     } catch (err) {
-      setErrorMsg(err.message || 'Failed to load verification documents')
+      setErrorMsg(err.message || t('failedLoadDocs'))
       setDocuments([])
     } finally {
       setLoading(false)
     }
-  }, [activeTab])
+  }, [activeTab, t])
 
   useEffect(() => {
     fetchDocuments()
@@ -320,17 +323,17 @@ export default function FarmerVerification() {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!response.ok) {
-        setActionError('Failed to load document file. Please try again.')
+        setActionError(t('docLoadFailed'))
         return
       }
       const blob = await response.blob()
       const blobUrl = URL.createObjectURL(blob)
       const win = window.open(blobUrl, '_blank', 'noopener,noreferrer')
       if (!win) {
-        setActionError('Popup blocked. Please allow popups for this site and try again.')
+        setActionError(t('popupBlocked'))
       }
     } catch {
-      setActionError('Network error while loading document file.')
+      setActionError(t('networkError'))
     }
   }
 
@@ -343,7 +346,7 @@ export default function FarmerVerification() {
       setApproveTarget(null)
       fetchDocuments()
     } catch (err) {
-      setActionError(err.message || 'Failed to approve document')
+      setActionError(err.message || t('failedApprove'))
       setApproveTarget(null)
     } finally {
       setActionSubmitting(false)
@@ -359,7 +362,7 @@ export default function FarmerVerification() {
       setRejectTarget(null)
       fetchDocuments()
     } catch (err) {
-      setActionError(err.message || 'Failed to reject document')
+      setActionError(err.message || t('failedReject'))
       setRejectTarget(null)
     } finally {
       setActionSubmitting(false)
@@ -375,8 +378,8 @@ export default function FarmerVerification() {
             <ShieldCheck size={22} />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold text-slate-900">Farmer Verification</h1>
-            <p className="text-xs text-slate-500">Review and approve farmer identity documents</p>
+            <h1 className="text-xl font-extrabold text-slate-900">{t('farmerVerification')}</h1>
+            <p className="text-xs text-slate-500">{t('reviewDocumentsSubtitle')}</p>
           </div>
         </div>
         <button
@@ -384,7 +387,7 @@ export default function FarmerVerification() {
           onClick={fetchDocuments}
           disabled={loading}
           className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-emerald-700 transition-colors disabled:opacity-50"
-          aria-label="Refresh"
+          aria-label={t('refresh')}
         >
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
         </button>
@@ -406,7 +409,7 @@ export default function FarmerVerification() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            {tab.label}
+            {t(tab.labelKey)}
           </button>
         ))}
       </div>
@@ -423,7 +426,7 @@ export default function FarmerVerification() {
       {loading && (
         <div className="text-center py-16 text-slate-400 text-sm">
           <RefreshCw size={28} className="animate-spin mx-auto mb-3 text-emerald-500" />
-          Loading documents…
+          {t('loadingDocuments')}
         </div>
       )}
 
@@ -433,7 +436,7 @@ export default function FarmerVerification() {
           <AlertCircle size={32} className="mx-auto text-rose-400" />
           <p className="text-sm font-semibold text-rose-700">{errorMsg}</p>
           <Button variant="outline" size="sm" onClick={fetchDocuments}>
-            Retry
+            {t('retry')}
           </Button>
         </Card>
       )}
@@ -443,7 +446,7 @@ export default function FarmerVerification() {
         <Card className="text-center py-14 space-y-3">
           <ShieldCheck size={36} className="mx-auto text-slate-300" />
           <p className="text-sm font-semibold text-slate-500">
-            No {activeTab} verification documents found
+            {t('noResults')} ({activeTab})
           </p>
         </Card>
       )}
@@ -455,6 +458,7 @@ export default function FarmerVerification() {
             <DocumentCard
               key={doc.id}
               doc={doc}
+              t={t}
               onApprove={(d) => {
                 setActionError('')
                 setApproveTarget(d)
@@ -476,6 +480,7 @@ export default function FarmerVerification() {
           submitting={actionSubmitting}
           onConfirm={handleApproveConfirm}
           onCancel={() => setApproveTarget(null)}
+          t={t}
         />
       )}
 
@@ -486,6 +491,7 @@ export default function FarmerVerification() {
           submitting={actionSubmitting}
           onConfirm={handleRejectConfirm}
           onCancel={() => setRejectTarget(null)}
+          t={t}
         />
       )}
     </div>

@@ -3,7 +3,7 @@ import { request } from './api'
 /**
  * marketPriceService.js
  *
- * Frontend service for fetching mandi/market prices from the Smart Mandi backend.
+ * Frontend service for fetching mandi/market prices from the KisanMitra backend.
  *
  * Architecture:
  *   React → GET /api/market/prices (own Express backend)
@@ -14,7 +14,7 @@ import { request } from './api'
  */
 
 /**
- * Fetch commodity market prices via the Smart Mandi backend proxy.
+ * Fetch commodity market prices via the KisanMitra backend proxy.
  *
  * @param {object} [filters]
  * @param {string} [filters.commodity]  — crop/commodity name (Hindi or English)

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
+import { useLanguage } from '../../context/LanguageContext'
 import {
   getCurrentWeather,
   getWeatherHistory,
@@ -97,6 +98,7 @@ function WeatherRow({ rec }) {
  *   onNavigate — (viewKey: string) => void
  */
 export default function Weather({ onNavigate }) {
+  const { t } = useLanguage()
   // ── Location inputs ─────────────────────────────────────────────────────────
   // Default: Indore, Madhya Pradesh — a major agricultural mandi location
   const [latInput, setLatInput] = useState('22.7196')
@@ -215,16 +217,16 @@ export default function Weather({ onNavigate }) {
             </div>
             <div>
               <h1 id="weather-heading" className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                मौसम / Weather
+                {t('weatherTitle', 'Weather')}
               </h1>
               <p className="text-xs text-slate-500 font-medium">
-                Agricultural Weather Intelligence
+                {t('weatherSubtitle', 'Agricultural Weather Intelligence')}
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => onNavigate?.('home')} aria-label="Go to Home">
+          <Button variant="outline" size="sm" onClick={() => onNavigate?.('home')} aria-label={t('goHome', 'Home')}>
             <Home size={16} />
-            <span className="hidden sm:inline">होम</span>
+            <span className="hidden sm:inline">{t('goHome', 'Home')}</span>
           </Button>
         </div>
       </section>
@@ -242,12 +244,12 @@ export default function Weather({ onNavigate }) {
       {/* ── LOCATION INPUT ───────────────────────────────────────────── */}
       <form onSubmit={handleLocationSearch} className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-          Location — Latitude &amp; Longitude
+          {t('locationInput', 'Location — Latitude & Longitude')}
         </p>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="lat-input" className="block text-xs font-semibold text-slate-600 mb-1">
-              Latitude
+              {t('latitude', 'Latitude')}
             </label>
             <input
               id="lat-input"

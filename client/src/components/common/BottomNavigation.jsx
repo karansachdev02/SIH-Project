@@ -1,16 +1,17 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Home, TrendingUp, ShoppingBag, Bot, User } from 'lucide-react'
+import { useLanguage } from '../../context/LanguageContext'
 
-const NAV_ITEMS = [
-  { id: 'home',    label: 'होम',      englishLabel: 'Home',    icon: Home,        available: true  },
-  { id: 'prices',  label: 'मंडी भाव', englishLabel: 'Prices',  icon: TrendingUp,  available: true  },
-  { id: 'sell',    label: 'बेचें',    englishLabel: 'Sell',    icon: ShoppingBag, available: true  },
-  { id: 'ai',      label: 'AI सहायक', englishLabel: 'AI',      icon: Bot,         available: true  },
-  { id: 'profile', label: 'प्रोफ़ाइल', englishLabel: 'Profile', icon: User,        available: true  },
+const NAV_IDS = [
+  { id: 'home',    labelKey: 'home',    icon: Home,        available: true  },
+  { id: 'prices',  labelKey: 'prices',  icon: TrendingUp,  available: true  },
+  { id: 'sell',    labelKey: 'sellCrop',icon: ShoppingBag, available: true  },
+  { id: 'ai',      labelKey: 'aiPrediction', icon: Bot,    available: true  },
+  { id: 'profile', labelKey: 'profile', icon: User,        available: true  },
 ]
 
 /**
- * Mobile-first Bottom Navigation Bar for Smart Mandi.
+ * Mobile-first Bottom Navigation Bar for KisanMitra.
  * Shown on mobile/tablet viewports and hidden on desktop (md:hidden).
  *
  * Props:
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
  *   isAuthenticated — boolean from AuthContext
  */
 export default function BottomNavigation({ activeTab = 'home', onNavigate, user, isAuthenticated }) {
+  const { t } = useLanguage()
   // Local toast state for unavailable tabs
   const [toastId, setToastId] = useState(null)
 
@@ -97,7 +99,7 @@ export default function BottomNavigation({ activeTab = 'home', onNavigate, user,
 
   return (
     <nav
-      aria-label="मुख्य नेविगेशन / Main navigation"
+      aria-label="Main navigation"
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-emerald-100 shadow-lg px-2 py-1.5"
     >
       {/* Coming-soon toast */}
@@ -107,13 +109,14 @@ export default function BottomNavigation({ activeTab = 'home', onNavigate, user,
           aria-live="polite"
           className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-semibold shadow-lg whitespace-nowrap"
         >
-          जल्द आ रहा है / Coming soon
+          {t('comingSoon', 'Coming soon')}
         </div>
       )}
 
       <div className="flex items-center justify-around max-w-md mx-auto">
-        {NAV_ITEMS.map((item) => {
+        {NAV_IDS.map((item) => {
           const Icon = item.icon
+          const label = t(item.labelKey, item.id)
           const isActive =
             item.id === 'home'    ? isHomeActive :
             item.id === 'profile' ? isProfileActive :
@@ -125,7 +128,7 @@ export default function BottomNavigation({ activeTab = 'home', onNavigate, user,
             <button
               key={item.id}
               type="button"
-              aria-label={`${item.englishLabel}${item.available ? '' : ' — जल्द आ रहा है'}`}
+              aria-label={label}
               aria-current={isActive ? 'page' : undefined}
               onClick={() => handlePress(item)}
               className={`relative flex flex-col items-center justify-center py-1 px-2 min-w-[56px] min-h-[48px] rounded-xl transition-all ${
@@ -142,7 +145,7 @@ export default function BottomNavigation({ activeTab = 'home', onNavigate, user,
                 aria-hidden="true"
               />
               <span className="text-[11px] mt-0.5 leading-tight tracking-tight">
-                {item.label}
+                {label}
               </span>
             </button>
           )

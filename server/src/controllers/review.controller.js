@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import Booking from '../models/Booking.js'
 import Review  from '../models/Review.js'
+import { createNotification } from '../services/notificationService.js'
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 
@@ -110,6 +111,20 @@ export const createReview = async (req, res) => {
       rating,
       review:  reviewText,
     })
+
+    // ── Fire notification to farmer (non-blocking) ────────────────────────────
+    try {
+      await createNotification({
+        recipient:   farmerId,
+        type:        'new_review',
+        title:       'New Review Received',
+        message:     `A buyer has left a ${rating}-star review for your crop.`,
+        relatedId:   rev._id,
+        relatedType: 'Review',
+      })
+    } catch (notifErr) {
+      console.error('new_review notification failed (non-fatal):', notifErr?.message)
+    }
 
     return res.status(201).json({
       success: true,

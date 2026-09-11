@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 /**
- * Booking Model for Smart Mandi.
+ * Booking Model for KisanMitra.
  *
  * Represents a pre-booking request made by a buyer for a specific
  * available crop listing created by a farmer.

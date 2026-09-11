@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 /**
- * VerificationDocument Schema for Smart Mandi Farmer Verification.
+ * VerificationDocument Schema for KisanMitra Farmer Verification.
  * Stores controlled document metadata without exposing sensitive numbers or files.
  */
 const verificationDocumentSchema = new mongoose.Schema(

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 /**
- * Crop Model for Smart Mandi.
+ * Crop Model for KisanMitra.
  * Represents a crop listing created by a verified farmer.
  * Designed to be future-compatible with marketplace, pre-booking,
  * and transport features — without implementing those yet.

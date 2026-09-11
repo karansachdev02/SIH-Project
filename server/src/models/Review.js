@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 /**
- * Review Model for Smart Mandi.
+ * Review Model for KisanMitra.
  *
  * A buyer may leave one review per completed booking.
  * The review is tied to a specific booking, farmer, buyer, and crop.

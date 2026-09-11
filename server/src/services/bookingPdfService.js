@@ -1,7 +1,7 @@
 /**
  * bookingPdfService.js
  *
- * Generates a Smart Mandi booking slip PDF from a populated booking object.
+ * Generates a KisanMitra booking slip PDF from a populated booking object.
  * Uses PDFKit (pure Node.js, no external API required).
  *
  * Usage:
@@ -112,10 +112,10 @@ export function generateBookingSlipPdf(booking, res) {
     size:    'A4',
     margins: { top: 40, bottom: 40, left: 40, right: 40 },
     info: {
-      Title:    'Smart Mandi Booking Slip',
-      Author:   'Smart Mandi',
+      Title:    'KisanMitra Booking Slip',
+      Author:   'KisanMitra',
       Subject:  'Crop Pre-Booking Confirmation',
-      Keywords: 'smart mandi, booking, crop, farmer, buyer',
+      Keywords: 'kisanmitra, booking, crop, farmer, buyer',
     },
   })
 
@@ -140,7 +140,7 @@ export function generateBookingSlipPdf(booking, res) {
     .fillColor(C.white)
     .font('Helvetica-Bold')
     .fontSize(20)
-    .text('Smart Mandi', 55, 52)
+    .text('KisanMitra', 55, 52)
 
   doc
     .fillColor('#a7f3d0')
@@ -149,13 +149,15 @@ export function generateBookingSlipPdf(booking, res) {
     .text('Crop Pre-Booking Slip', 55, 76)
 
   // Booking ref in top-right corner of banner
+  // x=40, width=PW (515) matches the banner rect exactly (40 + 515 = 555),
+  // so right-aligned text hugs the banner's right edge and never clips.
   doc
     .fillColor(C.white)
     .font('Helvetica-Bold')
     .fontSize(10)
-    .text(shortId(booking._id || booking.id || ''), 0, 58, {
+    .text(shortId(booking._id || booking.id || ''), 40, 58, {
       align: 'right',
-      width: 590,
+      width: PW,
     })
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -296,9 +298,9 @@ export function generateBookingSlipPdf(booking, res) {
     .font('Helvetica')
     .fontSize(7.5)
     .text(
-      'DISCLAIMER: This slip is a digital record of a pre-booking request made on Smart Mandi. ' +
+      'DISCLAIMER: This slip is a digital record of a pre-booking request made on KisanMitra. ' +
       'It does not constitute a legally binding sale contract. Actual transaction terms are subject ' +
-      'to mutual agreement between farmer and buyer. Smart Mandi is not responsible for disputes ' +
+      'to mutual agreement between farmer and buyer. KisanMitra is not responsible for disputes ' +
       'arising from transactions conducted outside the platform.',
       40, cy, { width: PW, align: 'justify' }
     )
@@ -318,7 +320,7 @@ export function generateBookingSlipPdf(booking, res) {
     .fillColor(C.muted)
     .font('Helvetica')
     .fontSize(7.5)
-    .text('Smart Mandi \u2014 Connecting Farmers & Buyers', 40, footerY + 6, {
+    .text('KisanMitra \u2014 Connecting Farmers & Buyers', 40, footerY + 6, {
       width: PW / 2,
     })
     .text(

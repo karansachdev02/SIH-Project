@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 /**
- * Single User Model Schema for Smart Mandi.
+ * Single User Model Schema for KisanMitra.
  * Supports Farmer, Buyer, and Admin roles.
  */
 const userSchema = new mongoose.Schema(

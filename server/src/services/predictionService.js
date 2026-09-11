@@ -1,7 +1,7 @@
 /**
  * predictionService.js
  *
- * Statistical crop price prediction engine for Smart Mandi.
+ * Statistical crop price prediction engine for KisanMitra.
  *
  * ARCHITECTURE:
  *   This service is designed as a clean interface that can be backed by:
@@ -32,9 +32,10 @@
 import { buildFeatureVectors } from './featureService.js'
 
 // ── Gemini configuration (optional) ──────────────────────────────────────────
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
-const GEMINI_MODEL   = 'gemini-1.5-flash'
+// NOTE: GEMINI_API_KEY is intentionally NOT cached at module load time.
+// It is read from process.env inside geminiPredict() on every call so that the
+// key is always current even if dotenv loads asynchronously or tests override it.
+const GEMINI_MODEL   = 'gemini-2.5-flash'
 const GEMINI_URL     = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 const GEMINI_TIMEOUT = 15_000
 
@@ -207,7 +208,9 @@ Respond ONLY with valid JSON in exactly this format (no markdown, no explanation
  * @returns {Promise<object|null>}
  */
 async function geminiPredict(commodity, summary, recentRows, horizon) {
-  if (!GEMINI_API_KEY) return null
+  // Read at call time — never cache at module level (dotenv may not yet be loaded)
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey || !apiKey.trim() || apiKey === 'your_gemini_api_key_here') return null
 
   const prompt = buildGeminiPrompt(commodity, summary, recentRows, horizon)
 
@@ -224,7 +227,7 @@ async function geminiPredict(commodity, summary, recentRows, horizon) {
     const controller = new AbortController()
     const timeoutId  = setTimeout(() => controller.abort(), GEMINI_TIMEOUT)
 
-    const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+    const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(body),
@@ -251,7 +254,7 @@ async function geminiPredict(commodity, summary, recentRows, horizon) {
     return {
       predicted,
       confidence:     ['low', 'medium', 'high'].includes(parsed.confidence) ? parsed.confidence : 'medium',
-      method:         'gemini-1.5-flash',
+      method:         GEMINI_MODEL,
       trendDirection: ['rising', 'falling', 'stable'].includes(parsed.trendDirection) ? parsed.trendDirection : 'stable',
       reasoning:      typeof parsed.reasoning === 'string' ? parsed.reasoning.slice(0, 300) : null,
     }
@@ -272,7 +275,7 @@ async function geminiPredict(commodity, summary, recentRows, horizon) {
  * {
  *   commodity: string,
  *   horizon: number,          // days ahead
- *   engine: string,           // 'gemini-1.5-flash' | 'statistical' | 'insufficient-data'
+ *   engine: string,           // GEMINI_MODEL | 'statistical' | 'insufficient-data'
  *   predicted: number|null,   // predicted modal price in ₹/quintal
  *   confidence: string,       // 'low' | 'medium' | 'high'
  *   trendDirection: string,   // 'rising' | 'falling' | 'stable'

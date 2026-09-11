@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 /**
- * OtpVerification Model Schema for Smart Mandi.
+ * OtpVerification Model Schema for KisanMitra.
  * Stores hashed OTPs with automatic TTL expiration.
  */
 const otpVerificationSchema = new mongoose.Schema(

@@ -1,7 +1,7 @@
 import React from 'react'
 
 /**
- * Accessible, touch-friendly icon button for Smart Mandi.
+ * Accessible, touch-friendly icon button for KisanMitra.
  */
 export default function IconButton({
   icon: Icon,

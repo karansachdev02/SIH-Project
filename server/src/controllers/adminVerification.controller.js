@@ -3,6 +3,7 @@ import fs from 'fs'
 import mongoose from 'mongoose'
 import VerificationDocument from '../models/VerificationDocument.js'
 import User from '../models/User.js'
+import { createNotification } from '../services/notificationService.js'
 
 /**
  * @desc    List farmer verification documents for admin review
@@ -137,6 +138,20 @@ export const reviewVerificationDocument = async (req, res) => {
         verificationDocumentStatus: 'approved',
       })
 
+      // ── Notify farmer (non-blocking) ──────────────────────────────────────
+      try {
+        await createNotification({
+          recipient:   farmer._id,
+          type:        'verification_approved',
+          title:       'Verification Approved',
+          message:     'Your farmer verification has been approved. You can now access all platform features.',
+          relatedId:   doc._id,
+          relatedType: 'VerificationDocument',
+        })
+      } catch (notifErr) {
+        console.error('verification_approved notification failed (non-fatal):', notifErr?.message)
+      }
+
       return res.status(200).json({
         success: true,
         message: 'Farmer verification approved successfully',
@@ -161,6 +176,20 @@ export const reviewVerificationDocument = async (req, res) => {
         verificationStatus: 'rejected',
         verificationDocumentStatus: 'rejected',
       })
+
+      // ── Notify farmer (non-blocking) ──────────────────────────────────────
+      try {
+        await createNotification({
+          recipient:   farmer._id,
+          type:        'verification_rejected',
+          title:       'Verification Rejected',
+          message:     `Your verification was rejected. Reason: ${trimmedReason}`,
+          relatedId:   doc._id,
+          relatedType: 'VerificationDocument',
+        })
+      } catch (notifErr) {
+        console.error('verification_rejected notification failed (non-fatal):', notifErr?.message)
+      }
 
       return res.status(200).json({
         success: true,

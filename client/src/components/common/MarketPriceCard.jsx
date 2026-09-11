@@ -1,4 +1,6 @@
 import { TrendingUp, MapPin, CalendarDays, AlertTriangle } from 'lucide-react'
+import SpeakButton from './SpeakButton'
+import { useLanguage } from '../../context/LanguageContext'
 
 /**
  * MarketPriceCard — reusable component for displaying a single mandi price record.
@@ -12,7 +14,9 @@ import { TrendingUp, MapPin, CalendarDays, AlertTriangle } from 'lucide-react'
  *   variant    {string}  — 'hero' | 'compact'  (default: 'compact')
  *   isFallback {boolean} — true when source is 'fallback'; shows sample-data label
  */
-export default function MarketPriceCard({ price, variant = 'compact', isFallback = false }) {
+export default function MarketPriceCard({ price, variant = 'compact', isFallback = false, locale }) {
+  const { t } = useLanguage()
+
   if (!price) return null
 
   const {
@@ -59,7 +63,7 @@ export default function MarketPriceCard({ price, variant = 'compact', isFallback
               <TrendingUp size={20} aria-hidden="true" />
             </div>
             <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide">
-              आज का मंडी भाव
+              {t('todaysMandiBhav', "Today's Mandi Rate")}
             </h2>
           </div>
 
@@ -67,12 +71,12 @@ export default function MarketPriceCard({ price, variant = 'compact', isFallback
           {isFallback ? (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-200 text-xs font-semibold border border-amber-400/30">
               <AlertTriangle size={12} aria-hidden="true" />
-              <span>नमूना डेटा / Sample Data</span>
+              <span>{t('sampleDataLabel', 'Sample Data / Demo')}</span>
             </div>
           ) : (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600/30 text-emerald-200 text-xs font-semibold border border-emerald-500/30">
               <TrendingUp size={12} aria-hidden="true" />
-              <span>नवीनतम उपलब्ध डेटा / Latest Data</span>
+              <span>{t('latestDataLabel', 'Latest Available Data')}</span>
             </div>
           )}
         </div>
@@ -81,7 +85,7 @@ export default function MarketPriceCard({ price, variant = 'compact', isFallback
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <div className="text-emerald-300 text-sm font-semibold tracking-wider uppercase">
-              फसल / Commodity
+              {t('commodity', 'Commodity')}
             </div>
             <div className="text-3xl sm:text-4xl font-extrabold text-white mt-1">
               {commodityDisplay || '–'}
@@ -96,7 +100,7 @@ export default function MarketPriceCard({ price, variant = 'compact', isFallback
 
           <div className="bg-emerald-800/50 backdrop-blur-xs rounded-2xl p-4 border border-emerald-700/50 flex flex-col gap-1.5 sm:items-end">
             <div className="text-xs text-emerald-200 font-medium">
-              मंडी मूल्य / Mandi Rate
+              {t('mandiRate', 'Mandi Rate')}
             </div>
             <div className="text-2xl sm:text-3xl font-black text-amber-300">
               {fmt(modalPrice)}{' '}
@@ -119,7 +123,7 @@ export default function MarketPriceCard({ price, variant = 'compact', isFallback
         {/* Source attribution */}
         {!isFallback && (
           <p className="mt-3 text-[11px] text-emerald-500 text-right">
-            स्रोत: data.gov.in (दैनिक मंडी डेटा / Daily Market Data)
+            {t('sourceAttribution', 'Source: data.gov.in (Daily Market Data)')}
           </p>
         )}
       </div>
@@ -127,9 +131,10 @@ export default function MarketPriceCard({ price, variant = 'compact', isFallback
   }
 
   // ── COMPACT variant — white card, used in Prices list ────────────────────
+  const speakText = `${commodityDisplay || 'Crop'}, ${locationStr || ''}, price ${fmt(modalPrice)} per ${unit || 'Quintal'}.`
   return (
     <div className="bg-white rounded-2xl border border-emerald-100 shadow-xs p-4 space-y-2.5">
-      {/* Top row: commodity + modal price */}
+      {/* Top row: commodity + modal price + speak */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-base font-bold text-slate-900 truncate">{commodityDisplay || '–'}</p>
@@ -140,9 +145,12 @@ export default function MarketPriceCard({ price, variant = 'compact', isFallback
             </div>
           )}
         </div>
-        <div className="text-right shrink-0">
-          <p className="text-lg font-extrabold text-emerald-700">{fmt(modalPrice)}</p>
-          <p className="text-[11px] text-slate-400">/ {unit || 'Quintal'}</p>
+        <div className="text-right shrink-0 flex items-start gap-1.5">
+          <div>
+            <p className="text-lg font-extrabold text-emerald-700">{fmt(modalPrice)}</p>
+            <p className="text-[11px] text-slate-400">/ {unit || 'Quintal'}</p>
+          </div>
+          <SpeakButton text={speakText} language={locale} label={commodityDisplay} size={13} />
         </div>
       </div>
 
@@ -170,7 +178,7 @@ export default function MarketPriceCard({ price, variant = 'compact', isFallback
       {isFallback && (
         <div className="flex items-center gap-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-1">
           <AlertTriangle size={11} aria-hidden="true" />
-          <span>नमूना डेटा / Sample Data — actual prices may differ</span>
+          <span>{t('sampleDataLabel', 'Sample Data / Demo')} — actual prices may differ</span>
         </div>
       )}
     </div>

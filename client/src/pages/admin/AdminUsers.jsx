@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { getAdminUsers, getAdminUserById } from '../../services/adminService'
+import { useLanguage } from '../../context/LanguageContext'
 import {
   ArrowLeft,
   Users,
@@ -62,7 +63,7 @@ function VerifBadge({ status }) {
 
 // ── User card (list item) ─────────────────────────────────────────────────────
 
-function UserCard({ user, onSelect }) {
+function UserCard({ user, onSelect, t }) {
   const formatDate = (v) => {
     if (!v) return null
     const d = new Date(v)
@@ -114,7 +115,7 @@ function UserCard({ user, onSelect }) {
           </span>
         )}
         {formatDate(user.createdAt) && (
-          <span className="text-slate-400">Joined {formatDate(user.createdAt)}</span>
+          <span className="text-slate-400">{t('joinedLabel')} {formatDate(user.createdAt)}</span>
         )}
       </div>
     </button>
@@ -123,7 +124,7 @@ function UserCard({ user, onSelect }) {
 
 // ── User detail panel ─────────────────────────────────────────────────────────
 
-function UserDetail({ userId, onClose }) {
+function UserDetail({ userId, onClose, t }) {
   const [detail,  setDetail]  = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
@@ -132,10 +133,10 @@ function UserDetail({ userId, onClose }) {
     let cancelled = false
     getAdminUserById(userId)
       .then((data) => { if (!cancelled) { setDetail(data.user); setError(null) } })
-      .catch((err) => { if (!cancelled) { setError(err?.message || 'Failed to load user.'); setDetail(null) } })
+      .catch((err) => { if (!cancelled) { setError(err?.message || t('error')); setDetail(null) } })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [userId])
+  }, [userId, t])
 
   const formatDate = (v) => {
     if (!v) return '—'
@@ -147,11 +148,11 @@ function UserDetail({ userId, onClose }) {
     <div className="bg-white rounded-2xl border border-slate-200 shadow-md">
       {/* Panel header */}
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-100">
-        <h2 className="text-sm font-bold text-slate-800">User Detail</h2>
+        <h2 className="text-sm font-bold text-slate-800">{t('userDetail')}</h2>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close detail"
+          aria-label={t('close')}
           className="w-7 h-7 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
         >
           <X size={16} />
@@ -162,7 +163,7 @@ function UserDetail({ userId, onClose }) {
         {loading && (
           <div className="flex items-center gap-2 text-slate-400 text-sm py-4 justify-center">
             <Loader2 size={18} className="animate-spin" />
-            <span>Loading…</span>
+            <span>{t('loading')}</span>
           </div>
         )}
 
@@ -212,7 +213,7 @@ function UserDetail({ userId, onClose }) {
                 <div className="bg-slate-50 rounded-xl p-3 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
                     <Wheat size={13} className="text-orange-500" />
-                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Crops</span>
+                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">{t('cropsLabel')}</span>
                   </div>
                   <p className="text-xl font-extrabold text-slate-900">{detail.cropCount}</p>
                 </div>
@@ -221,7 +222,7 @@ function UserDetail({ userId, onClose }) {
                 <div className="bg-slate-50 rounded-xl p-3 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
                     <ClipboardList size={13} className="text-violet-500" />
-                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Bookings</span>
+                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">{t('bookingsLabel')}</span>
                   </div>
                   <p className="text-xl font-extrabold text-slate-900">{detail.bookingCount}</p>
                 </div>
@@ -230,7 +231,7 @@ function UserDetail({ userId, onClose }) {
                 <div className="bg-slate-50 rounded-xl p-3 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
                     <Star size={13} className="text-amber-500" />
-                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Reviews</span>
+                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">{t('reviewsLabel')}</span>
                   </div>
                   <p className="text-xl font-extrabold text-slate-900">{detail.reviewCount}</p>
                 </div>
@@ -239,7 +240,7 @@ function UserDetail({ userId, onClose }) {
                 <div className="bg-slate-50 rounded-xl p-3 text-center">
                   <div className="flex items-center justify-center gap-1 mb-0.5">
                     <Star size={13} className="text-amber-500" />
-                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Avg Rating</span>
+                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">{t('avgRatingLabel')}</span>
                   </div>
                   <p className="text-xl font-extrabold text-slate-900">{Number(detail.avgRating).toFixed(1)}</p>
                 </div>
@@ -248,8 +249,8 @@ function UserDetail({ userId, onClose }) {
 
             {/* Dates */}
             <div className="text-[11px] text-slate-400 space-y-0.5 border-t border-slate-100 pt-3">
-              <p>Joined: <span className="text-slate-600 font-medium">{formatDate(detail.createdAt)}</span></p>
-              <p>Updated: <span className="text-slate-600 font-medium">{formatDate(detail.updatedAt)}</span></p>
+              <p>{t('joinedLabel')}: <span className="text-slate-600 font-medium">{formatDate(detail.createdAt)}</span></p>
+              <p>{t('updatedLabel')}: <span className="text-slate-600 font-medium">{formatDate(detail.updatedAt)}</span></p>
             </div>
           </>
         )}
@@ -260,25 +261,12 @@ function UserDetail({ userId, onClose }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-const ROLE_OPTIONS = [
-  { value: '',        label: 'All Roles' },
-  { value: 'farmer',  label: 'Farmers' },
-  { value: 'buyer',   label: 'Buyers' },
-  { value: 'admin',   label: 'Admins' },
-]
-
-const VERIF_OPTIONS = [
-  { value: '',          label: 'All Statuses' },
-  { value: 'pending',   label: 'Pending' },
-  { value: 'verified',  label: 'Verified' },
-  { value: 'rejected',  label: 'Rejected' },
-]
-
 /**
  * AdminUsers — paginated, searchable, filterable user list.
  * Props: onNavigate
  */
 export default function AdminUsers({ onNavigate }) {
+  const { t } = useLanguage()
   const [users,      setUsers]      = useState([])
   const [pagination, setPagination] = useState(null)
   const [loading,    setLoading]    = useState(true)
@@ -295,6 +283,20 @@ export default function AdminUsers({ onNavigate }) {
   // Detail panel
   const [selectedId, setSelectedId] = useState(null)
 
+  const ROLE_OPTIONS = [
+    { value: '',        label: t('allRoles') },
+    { value: 'farmer',  label: t('farmers') },
+    { value: 'buyer',   label: t('buyers') },
+    { value: 'admin',   label: t('admins') },
+  ]
+
+  const VERIF_OPTIONS = [
+    { value: '',          label: t('allStatuses') },
+    { value: 'pending',   label: t('pending') },
+    { value: 'verified',  label: t('verifiedStatus') },
+    { value: 'rejected',  label: t('rejectedStatus') },
+  ]
+
   const fetchUsers = useCallback((filters) => {
     const params = { page: filters.page, limit: 20 }
     if (filters.role)   params.role = filters.role
@@ -308,11 +310,11 @@ export default function AdminUsers({ onNavigate }) {
         setError(null)
       })
       .catch((err) => {
-        setError(err?.message || 'Failed to load users. Please try again.')
+        setError(err?.message || t('error'))
         setUsers([])
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [t])
 
   useEffect(() => {
     let active = true
@@ -329,12 +331,12 @@ export default function AdminUsers({ onNavigate }) {
       })
       .catch((err) => {
         if (!active) return
-        setError(err?.message || 'Failed to load users. Please try again.')
+        setError(err?.message || t('error'))
         setUsers([])
       })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [applied])
+  }, [applied, t])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -362,7 +364,7 @@ export default function AdminUsers({ onNavigate }) {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          aria-label="Back to dashboard"
+          aria-label={t('backToDashboard')}
           onClick={() => onNavigate?.('admin-dashboard')}
           className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
         >
@@ -371,15 +373,15 @@ export default function AdminUsers({ onNavigate }) {
         <div className="flex-1">
           <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
             <Users size={22} className="text-violet-600" />
-            User Management
+            {t('userManagement')}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            {pagination ? `${pagination.total} users` : 'Platform users'}
+            {pagination ? `${pagination.total} ${t('usersCount')}` : t('platformUsers')}
           </p>
         </div>
         <button
           type="button"
-          aria-label="Refresh"
+          aria-label={t('refresh')}
           onClick={() => fetchUsers(applied)}
           disabled={loading}
           className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-40"
@@ -397,7 +399,7 @@ export default function AdminUsers({ onNavigate }) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, mobile, location…"
+              placeholder={t('searchUsersPlaceholder')}
               className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
             />
           </div>
@@ -405,7 +407,7 @@ export default function AdminUsers({ onNavigate }) {
             type="submit"
             className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
-            Search
+            {t('search')}
           </button>
         </div>
 
@@ -432,7 +434,7 @@ export default function AdminUsers({ onNavigate }) {
               onClick={handleReset}
               className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 transition-colors focus:outline-none"
             >
-              <X size={13} />Clear
+              <X size={13} />{t('clearLabel')}
             </button>
           )}
         </div>
@@ -443,15 +445,15 @@ export default function AdminUsers({ onNavigate }) {
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium flex items-center justify-between gap-3">
           <span>{error}</span>
           <button type="button" onClick={() => fetchUsers(applied)}
-            className="text-xs font-semibold underline hover:no-underline shrink-0">Retry</button>
+            className="text-xs font-semibold underline hover:no-underline shrink-0">{t('retry')}</button>
         </div>
       )}
 
-      {/* Loading skeleton */}
+      {/* Loading */}
       {loading && (
         <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
           <Loader2 size={28} className="animate-spin text-violet-400" />
-          <p className="text-sm font-medium">Loading users…</p>
+          <p className="text-sm font-medium">{t('loadingUsers')}</p>
         </div>
       )}
 
@@ -462,9 +464,9 @@ export default function AdminUsers({ onNavigate }) {
             <Users size={28} />
           </div>
           <div>
-            <p className="font-bold text-slate-700">No users found</p>
+            <p className="font-bold text-slate-700">{t('noUsersFound')}</p>
             <p className="text-sm text-slate-500 mt-1">
-              {hasFilters ? 'Try adjusting your filters.' : 'No users registered yet.'}
+              {hasFilters ? t('tryAdjustingFilters') : t('noUsersRegistered')}
             </p>
           </div>
         </div>
@@ -479,6 +481,7 @@ export default function AdminUsers({ onNavigate }) {
               <UserCard
                 key={String(u.id)}
                 user={u}
+                t={t}
                 onSelect={(id) => setSelectedId((prev) => prev === id ? null : id)}
               />
             ))}
@@ -486,7 +489,7 @@ export default function AdminUsers({ onNavigate }) {
 
           {/* Detail panel */}
           {selectedId && (
-            <UserDetail userId={selectedId} onClose={() => setSelectedId(null)} />
+            <UserDetail userId={selectedId} onClose={() => setSelectedId(null)} t={t} />
           )}
         </div>
       )}
@@ -500,10 +503,10 @@ export default function AdminUsers({ onNavigate }) {
             disabled={!pagination.hasPrev}
             className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400"
           >
-            <ChevronLeft size={15} />Prev
+            <ChevronLeft size={15} />{t('prevPage')}
           </button>
           <span className="text-sm text-slate-500">
-            Page <strong>{pagination.page}</strong> of <strong>{pagination.totalPages}</strong>
+            {t('pageLabel')} <strong>{pagination.page}</strong> {t('pageOfLabel')} <strong>{pagination.totalPages}</strong>
           </span>
           <button
             type="button"
@@ -511,7 +514,7 @@ export default function AdminUsers({ onNavigate }) {
             disabled={!pagination.hasNext}
             className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400"
           >
-            Next<ChevronRight size={15} />
+            {t('nextPage')}<ChevronRight size={15} />
           </button>
         </div>
       )}

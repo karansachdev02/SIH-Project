@@ -1,7 +1,7 @@
 import React from 'react'
 
 /**
- * Reusable responsive Card container for Smart Mandi.
+ * Reusable responsive Card container for KisanMitra.
  */
 export default function Card({
   children,

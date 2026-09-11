@@ -1,6 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
 import { getBuyerBookings, downloadBookingPdf } from '../../services/bookingService'
 import { createReview, getBookingReview } from '../../services/reviewService'
+import { getBuyerDeliveries } from '../../services/deliveryService'
+import { getBuyerTransactions } from '../../services/transactionService'
+import { useLanguage } from '../../context/LanguageContext'
 import {
   ArrowLeft,
   ClipboardList,
@@ -13,6 +16,8 @@ import {
   Download,
   Star,
   CheckCircle2,
+  Truck,
+  CreditCard,
 } from 'lucide-react'
 
 // ── Star rating picker ────────────────────────────────────────────────────────
@@ -63,15 +68,16 @@ function ReviewForm({ bookingId, onReviewed }) {
     }
   }
 
+  const { t } = useLanguage()
   return (
     <form onSubmit={handleSubmit} className="mt-2 space-y-3 border-t border-slate-100 pt-3">
-      <p className="text-xs font-bold text-slate-700">Rate &amp; Review this Farmer</p>
+      <p className="text-xs font-bold text-slate-700">{t('rateAndReview', 'Rate & Review this Farmer')}</p>
       <StarPicker value={rating} onChange={setRating} disabled={submitting} />
       <textarea
         value={reviewText}
         onChange={(e) => setReviewText(e.target.value.slice(0, 500))}
         rows={2}
-        placeholder="Share your experience (optional, max 500 chars)"
+        placeholder={t('reviewPlaceholder', 'Share your experience (optional, max 500 chars)')}
         disabled={submitting}
         className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
       />
@@ -83,8 +89,8 @@ function ReviewForm({ bookingId, onReviewed }) {
           className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting
-            ? <><Loader2 size={12} className="animate-spin" /><span>Submitting…</span></>
-            : <><Star size={12} /><span>Submit Review</span></>}
+            ? <><Loader2 size={12} className="animate-spin" /><span>{t('loading', 'Submitting…')}</span></>
+            : <><Star size={12} /><span>{t('submitReview', 'Submit Review')}</span></>}
         </button>
       </div>
       {submitErr && (
@@ -111,7 +117,7 @@ function ReviewDisplay({ review }) {
         </div>
         <span className="text-xs font-bold text-amber-700">{review.rating}/5</span>
         <span className="ml-auto flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-          <CheckCircle2 size={10} />Reviewed
+          <CheckCircle2 size={10} />{/* reviewed label — no useLanguage needed in this pure display helper */}Reviewed
         </span>
       </div>
       {review.review && (
@@ -144,7 +150,7 @@ function StatusBadge({ status }) {
 }
 
 // ── Booking card ──────────────────────────────────────────────────────────────
-function BookingCard({ booking }) {
+function BookingCard({ booking, deliveryId, transactionId, onNavigate }) {
   const [downloading,  setDownloading]  = useState(false)
   const [dlError,      setDlError]      = useState(null)
   // Review state — loaded lazily when booking.status === 'completed'
@@ -268,23 +274,49 @@ function BookingCard({ booking }) {
         </div>
       )}
 
-      {/* Bottom row: Ref + Download */}
-      <div className="flex items-center justify-between gap-3 pt-0.5">
+      {/* Bottom row: Ref + Download + Track Delivery */}
+      <div className="flex items-center justify-between gap-3 pt-0.5 flex-wrap">
         <p className="text-[11px] text-slate-400">
           Ref: <span className="font-mono">{String(booking.id).slice(-8).toUpperCase()}</span>
         </p>
-        <button
-          type="button"
-          onClick={handleDownload}
-          disabled={downloading}
-          aria-label="Download booking slip PDF"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {downloading
-            ? <Loader2 size={12} className="animate-spin" />
-            : <Download size={12} />}
-          {downloading ? 'Downloading…' : 'Download Slip'}
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Track Delivery button — only for confirmed/completed bookings with a delivery */}
+          {deliveryId && (booking.status === 'confirmed' || booking.status === 'completed') && (
+            <button
+              type="button"
+              onClick={() => onNavigate?.('delivery-tracking', { deliveryId: String(deliveryId) })}
+              aria-label="Track Delivery"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <Truck size={12} />
+              Track Delivery
+            </button>
+          )}
+          {/* Payment button — for confirmed/completed bookings with a transaction */}
+          {transactionId && (booking.status === 'confirmed' || booking.status === 'completed') && (
+            <button
+              type="button"
+              onClick={() => onNavigate?.('buyer-transactions')}
+              aria-label="View Payment"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500"
+            >
+              <CreditCard size={12} />
+              Payment
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            aria-label="Download booking slip PDF"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {downloading
+              ? <Loader2 size={12} className="animate-spin" />
+              : <Download size={12} />}
+            {downloading ? 'Downloading…' : 'Download Slip'}
+          </button>
+        </div>
       </div>
 
       {/* Download error */}
@@ -311,13 +343,13 @@ function BookingCard({ booking }) {
   )
 }
 
-// ── Filter tabs ───────────────────────────────────────────────────────────────
-const TABS = [
-  { key: '',          label: 'All' },
-  { key: 'pending',   label: 'Pending' },
-  { key: 'confirmed', label: 'Confirmed' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'cancelled', label: 'Cancelled' },
+// ── Filter tab keys (labels resolved with t() inside render) ─────────────────
+const TAB_KEYS = [
+  { key: '',          labelKey: 'viewAll', fallback: 'All' },
+  { key: 'pending',   labelKey: 'pending', fallback: 'Pending' },
+  { key: 'confirmed', labelKey: 'confirmed', fallback: 'Confirmed' },
+  { key: 'completed', labelKey: 'completed', fallback: 'Completed' },
+  { key: 'cancelled', labelKey: 'cancelled', fallback: 'Cancelled' },
 ]
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -327,10 +359,49 @@ const TABS = [
  * Props: onNavigate
  */
 export default function MyBookings({ onNavigate }) {
-  const [activeTab, setActiveTab]   = useState('')
-  const [bookings,  setBookings]    = useState([])
-  const [loading,   setLoading]     = useState(true)
-  const [error,     setError]       = useState(null)
+  const { t } = useLanguage()
+  const [activeTab,      setActiveTab]      = useState('')
+  const [bookings,       setBookings]       = useState([])
+  const [loading,        setLoading]        = useState(true)
+  const [error,          setError]          = useState(null)
+  // Map bookingId -> deliveryId for Track Delivery buttons
+  const [deliveryMap,    setDeliveryMap]    = useState({})
+  // Map bookingId -> transactionId for Payment buttons
+  const [transactionMap, setTransactionMap] = useState({})
+
+  // Load deliveries silently in background to build booking->delivery map
+  useEffect(() => {
+    let cancelled = false
+    getBuyerDeliveries()
+      .then((data) => {
+        if (cancelled) return
+        const map = {}
+        ;(data.deliveries || []).forEach((d) => {
+          const bookingId = d.booking?.id || String(d.booking || '')
+          if (bookingId) map[bookingId] = String(d.id)
+        })
+        setDeliveryMap(map)
+      })
+      .catch(() => { /* silent — delivery map is best-effort */ })
+    return () => { cancelled = true }
+  }, [])
+
+  // Load transactions silently to build booking->transaction map
+  useEffect(() => {
+    let cancelled = false
+    getBuyerTransactions()
+      .then((data) => {
+        if (cancelled) return
+        const map = {}
+        ;(data.transactions || []).forEach((t) => {
+          const bookingId = t.booking?.id || String(t.booking || '')
+          if (bookingId) map[bookingId] = String(t.id)
+        })
+        setTransactionMap(map)
+      })
+      .catch(() => { /* silent — transaction map is best-effort */ })
+    return () => { cancelled = true }
+  }, [])
 
   const fetchBookings = useCallback(async (status) => {
     setLoading(true)
@@ -357,7 +428,7 @@ export default function MyBookings({ onNavigate }) {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          aria-label="Back"
+          aria-label={t('back', 'Back')}
           onClick={() => onNavigate?.('buyer-authenticated')}
           className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
         >
@@ -366,13 +437,13 @@ export default function MyBookings({ onNavigate }) {
         <div className="flex-1">
           <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
             <ClipboardList size={22} className="text-emerald-600" />
-            My Bookings
+            {t('myBookings', 'My Bookings')}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">Your crop pre-booking requests</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t('myBookingsSublabel', 'Track your crop pre-booking requests')}</p>
         </div>
         <button
           type="button"
-          aria-label="Refresh"
+          aria-label={t('refresh', 'Refresh')}
           onClick={() => fetchBookings(activeTab)}
           disabled={loading}
           className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-40"
@@ -383,18 +454,18 @@ export default function MyBookings({ onNavigate }) {
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {TABS.map((t) => (
+        {TAB_KEYS.map((tab) => (
           <button
-            key={t.key}
+            key={tab.key}
             type="button"
-            onClick={() => setActiveTab(t.key)}
+            onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-              activeTab === t.key
+              activeTab === tab.key
                 ? 'bg-emerald-600 text-white'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-emerald-300'
             }`}
           >
-            {t.label}
+            {t(tab.labelKey, tab.fallback)}
           </button>
         ))}
       </div>
@@ -404,7 +475,7 @@ export default function MyBookings({ onNavigate }) {
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium flex items-center justify-between gap-3">
           <span>{error}</span>
           <button type="button" onClick={() => fetchBookings(activeTab)}
-            className="text-xs font-semibold underline hover:no-underline shrink-0">Retry</button>
+            className="text-xs font-semibold underline hover:no-underline shrink-0">{t('retry', 'Retry')}</button>
         </div>
       )}
 
@@ -412,7 +483,7 @@ export default function MyBookings({ onNavigate }) {
       {loading && (
         <div className="py-12 flex flex-col items-center gap-3 text-slate-500">
           <Loader2 size={28} className="animate-spin text-emerald-500" />
-          <p className="text-sm font-medium">Loading bookings…</p>
+          <p className="text-sm font-medium">{t('loading', 'Loading...')}</p>
         </div>
       )}
 
@@ -424,12 +495,12 @@ export default function MyBookings({ onNavigate }) {
           </div>
           <div>
             <p className="font-bold text-slate-700">
-              {activeTab ? `No ${activeTab} bookings` : 'No bookings yet'}
+              {activeTab ? `${t(activeTab, activeTab)} ${t('noBookings', 'No bookings yet').replace('अभी कोई ', '').replace(' नहीं', '')}` : t('noBookings', 'No bookings yet')}
             </p>
             <p className="text-sm text-slate-500 mt-1">
               {activeTab
-                ? 'Try a different filter.'
-                : 'Browse the marketplace and pre-book a crop to get started.'}
+                ? t('tryAdjustFilters', 'Try a different filter.')
+                : t('marketplaceSublabel', 'Browse the marketplace and pre-book a crop to get started.')}
             </p>
           </div>
           <button
@@ -437,7 +508,7 @@ export default function MyBookings({ onNavigate }) {
             onClick={() => onNavigate?.('marketplace')}
             className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
-            Browse Marketplace
+            {t('marketplace', 'Browse Marketplace')}
           </button>
         </div>
       )}
@@ -446,7 +517,13 @@ export default function MyBookings({ onNavigate }) {
       {!loading && !error && bookings.length > 0 && (
         <div className="space-y-3">
           {bookings.map((b) => (
-            <BookingCard key={String(b.id)} booking={b} />
+            <BookingCard
+              key={String(b.id)}
+              booking={b}
+              deliveryId={deliveryMap[String(b.id)] || null}
+              transactionId={transactionMap[String(b.id)] || null}
+              onNavigate={onNavigate}
+            />
           ))}
         </div>
       )}

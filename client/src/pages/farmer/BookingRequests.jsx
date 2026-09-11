@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { getFarmerBookings, updateBookingStatus } from '../../services/bookingService'
+import { useLanguage } from '../../context/LanguageContext'
 import {
   ArrowLeft,
   ClipboardList,
@@ -15,15 +16,14 @@ import {
   Star,
 } from 'lucide-react'
 
-// ── Status badge ──────────────────────────────────────────────────────────────
-const STATUS_LABELS = {
-  pending:   'Pending',
-  confirmed: 'Confirmed',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-}
-
 function StatusBadge({ status }) {
+  const { t } = useLanguage()
+  const STATUS_LABELS = {
+    pending:   t('pending', 'Pending'),
+    confirmed: t('confirmed', 'Confirmed'),
+    completed: t('completed', 'Completed'),
+    cancelled: t('cancelled', 'Cancelled'),
+  }
   const cfg = {
     pending:   'bg-amber-100   text-amber-800   border-amber-200',
     confirmed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
@@ -259,13 +259,13 @@ function BookingRequestCard({ booking, onActionDone }) {
   )
 }
 
-// ── Filter tabs ───────────────────────────────────────────────────────────────
-const TABS = [
-  { key: '',           label: 'All' },
-  { key: 'pending',    label: 'Pending' },
-  { key: 'confirmed',  label: 'Confirmed' },
-  { key: 'completed',  label: 'Completed' },
-  { key: 'cancelled',  label: 'Cancelled' },
+// ── Filter tab keys (labels resolved with t() inside render) ─────────────────
+const TAB_KEYS = [
+  { key: '',           labelKey: 'viewAll',    fallback: 'All' },
+  { key: 'pending',    labelKey: 'pending',    fallback: 'Pending' },
+  { key: 'confirmed',  labelKey: 'confirmed',  fallback: 'Confirmed' },
+  { key: 'completed',  labelKey: 'completed',  fallback: 'Completed' },
+  { key: 'cancelled',  labelKey: 'cancelled',  fallback: 'Cancelled' },
 ]
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -275,6 +275,7 @@ const TABS = [
  * Props: onNavigate
  */
 export default function BookingRequests({ onNavigate }) {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('')
   const [bookings,  setBookings]  = useState([])
   const [loading,   setLoading]   = useState(true)
@@ -307,7 +308,7 @@ export default function BookingRequests({ onNavigate }) {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          aria-label="Back to home"
+          aria-label={t('goHome', 'Back to home')}
           onClick={() => onNavigate?.('home')}
           className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
         >
@@ -316,18 +317,18 @@ export default function BookingRequests({ onNavigate }) {
         <div className="flex-1">
           <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
             <ClipboardList size={22} className="text-emerald-600" />
-            Booking Requests
+            {t('bookingRequestsTitle', 'Booking Requests')}
             {pendingCount > 0 && !loading && (
               <span className="ml-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200">
-                {pendingCount} pending
+                {pendingCount} {t('pending', 'pending')}
               </span>
             )}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">Incoming buyer pre-booking requests</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t('myBookingsSublabel', 'Incoming buyer pre-booking requests')}</p>
         </div>
         <button
           type="button"
-          aria-label="Refresh"
+          aria-label={t('refresh', 'Refresh')}
           onClick={() => fetchBookings(activeTab)}
           disabled={loading}
           className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-40"
@@ -338,18 +339,18 @@ export default function BookingRequests({ onNavigate }) {
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {TABS.map((t) => (
+        {TAB_KEYS.map((tab) => (
           <button
-            key={t.key}
+            key={tab.key}
             type="button"
-            onClick={() => setActiveTab(t.key)}
+            onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-              activeTab === t.key
+              activeTab === tab.key
                 ? 'bg-emerald-600 text-white'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-emerald-300'
             }`}
           >
-            {t.label}
+            {t(tab.labelKey, tab.fallback)}
           </button>
         ))}
       </div>
@@ -359,7 +360,7 @@ export default function BookingRequests({ onNavigate }) {
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium flex items-center justify-between gap-3">
           <span>{error}</span>
           <button type="button" onClick={() => fetchBookings(activeTab)}
-            className="text-xs font-semibold underline hover:no-underline shrink-0">Retry</button>
+            className="text-xs font-semibold underline hover:no-underline shrink-0">{t('retry', 'Retry')}</button>
         </div>
       )}
 
@@ -367,7 +368,7 @@ export default function BookingRequests({ onNavigate }) {
       {loading && (
         <div className="py-12 flex flex-col items-center gap-3 text-slate-500">
           <Loader2 size={28} className="animate-spin text-emerald-500" />
-          <p className="text-sm font-medium">Loading requests…</p>
+          <p className="text-sm font-medium">{t('loading', 'Loading...')}</p>
         </div>
       )}
 
@@ -379,10 +380,10 @@ export default function BookingRequests({ onNavigate }) {
           </div>
           <div>
             <p className="font-bold text-slate-700">
-              {activeTab ? `No ${activeTab} requests` : 'No booking requests yet'}
+              {t('noBookingRequests', 'No booking requests yet')}
             </p>
             <p className="text-sm text-slate-500 mt-1">
-              When buyers pre-book your crops, requests will appear here.
+              {t('myBookingsSublabel', 'When buyers pre-book your crops, requests will appear here.')}
             </p>
           </div>
         </div>

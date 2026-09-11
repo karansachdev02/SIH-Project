@@ -3,7 +3,7 @@ import Header from '../components/common/Header'
 import BottomNavigation from '../components/common/BottomNavigation'
 
 /**
- * Responsive Main Application Shell Layout for Smart Mandi.
+ * Responsive Main Application Shell Layout for KisanMitra.
  *
  * Props:
  *   children        — page content

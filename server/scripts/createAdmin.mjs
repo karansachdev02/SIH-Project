@@ -1,5 +1,5 @@
 /**
- * Smart Mandi — Admin User Seed Script
+ * KisanMitra — Admin User Seed Script
  *
  * Creates an admin user in MongoDB for use with the Farmer Verification panel.
  * Uses the same bcrypt hashing as normal user registration (genSalt(10) + hash).

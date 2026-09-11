@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   Sprout,
   Phone,
@@ -23,6 +23,7 @@ import LanguageSelector from '../../components/common/LanguageSelector'
 import { sendFarmerOtp, verifyFarmerOtp, registerFarmer, registerBuyer } from '../../services/authService'
 import { uploadFarmerDocument } from '../../services/verificationService'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 
 const INDIAN_LANGUAGES = [
   'English',
@@ -38,6 +39,7 @@ const INDIAN_LANGUAGES = [
 ]
 
 export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerRegistered }) {
+  const { t } = useLanguage()
   const [role, setRole] = useState('farmer')
   const [currentStep, setCurrentStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
@@ -86,8 +88,12 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
     businessType: 'मंडी व्यापारी / Trader',
   })
 
-  const farmerSteps = ['मोबाइल व OTP सत्यापन', 'किसान विवरण', 'दस्तावेज़', 'जमा करें']
-  const buyerSteps = ['खाता विवरण', 'व्यवसाय विवरण', 'खाता बनाएं']
+  const farmerSteps = useMemo(() => [
+    t('stepMobileOtp'), t('stepFarmerDetails'), t('stepDocument'), t('stepSubmit')
+  ], [t])
+  const buyerSteps = useMemo(() => [
+    t('stepAccountDetails'), t('stepBusinessDetails'), t('stepCreateAccount')
+  ], [t])
   const activeSteps = role === 'farmer' ? farmerSteps : buyerSteps
 
   // Cooldown timer tick
@@ -102,7 +108,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
   const handleSendOtp = async () => {
     setErrorMsg('')
     if (!farmerForm.mobile.trim() || !/^[6-9]\d{9}$/.test(farmerForm.mobile.trim())) {
-      setErrorMsg('कृपया मान्य 10-अंकीय मोबाइल नंबर दर्ज करें / Enter a valid 10-digit mobile number')
+      setErrorMsg(t('mobileInvalid'))
       return
     }
 
@@ -115,7 +121,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
         setDevOtpHint(res.developmentOtp)
       }
     } catch (err) {
-      setErrorMsg(err.message || 'OTP भेजने में विफलता / Failed to send OTP')
+      setErrorMsg(err.message || t('otpSendFailed'))
     } finally {
       setSendingOtp(false)
     }
@@ -124,7 +130,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
   const handleVerifyOtp = async () => {
     setErrorMsg('')
     if (!farmerForm.otp || farmerForm.otp.trim().length !== 6) {
-      setErrorMsg('कृपया 6-अंकीय OTP दर्ज करें / Enter 6-digit OTP')
+      setErrorMsg(t('otpPlaceholder'))
       return
     }
 
@@ -140,7 +146,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
         setDevOtpHint('')
       }
     } catch (err) {
-      setErrorMsg(err.message || 'OTP सत्यापन विफल / OTP verification failed')
+      setErrorMsg(err.message || t('otpVerifyFailed'))
     } finally {
       setVerifyingOtp(false)
     }
@@ -152,34 +158,34 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
     if (role === 'farmer') {
       if (currentStep === 1) {
         if (!farmerForm.name.trim()) {
-          setErrorMsg('कृपया पूरा नाम दर्ज करें / Full name is required')
+          setErrorMsg(t('fullNameRequired'))
           return false
         }
         if (!/^[6-9]\d{9}$/.test(farmerForm.mobile.trim())) {
-          setErrorMsg('कृपया मान्य 10-अंकीय मोबाइल नंबर दर्ज करें / Valid 10-digit mobile number required')
+          setErrorMsg(t('mobileInvalid'))
           return false
         }
         if (!isMobileVerified || !farmerForm.mobileVerificationToken) {
-          setErrorMsg('कृपया पहले अपना मोबाइल नंबर OTP से सत्यापित करें / Please verify mobile number via OTP first')
+          setErrorMsg(t('mobileVerifyFirst'))
           return false
         }
         if (!farmerForm.password || farmerForm.password.length < 6) {
-          setErrorMsg('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए / Password must be at least 6 characters')
+          setErrorMsg(t('passwordTooShort'))
           return false
         }
       }
     } else {
       if (currentStep === 1) {
         if (!buyerForm.name.trim()) {
-          setErrorMsg('कृपया पूरा नाम दर्ज करें / Full name is required')
+          setErrorMsg(t('fullNameRequired'))
           return false
         }
         if (!/^[6-9]\d{9}$/.test(buyerForm.mobile.trim())) {
-          setErrorMsg('कृपया मान्य 10-अंकीय मोबाइल नंबर दर्ज करें / Valid 10-digit mobile number required')
+          setErrorMsg(t('mobileInvalid'))
           return false
         }
         if (!buyerForm.password || buyerForm.password.length < 6) {
-          setErrorMsg('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए / Password must be at least 6 characters')
+          setErrorMsg(t('passwordTooShort'))
           return false
         }
       }
@@ -210,13 +216,13 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
     if (!file) return
 
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      setErrorMsg('केवल PDF, JPG, JPEG और PNG फ़ाइलें समर्थित हैं / Only PDF, JPG, JPEG and PNG files are allowed')
+      setErrorMsg(t('fileTypesAllowed'))
       e.target.value = ''
       return
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setErrorMsg('फ़ाइल का आकार 5MB से अधिक नहीं होना चाहिए / File size must not exceed 5MB')
+      setErrorMsg(t('fileSizeLimit'))
       e.target.value = ''
       return
     }
@@ -266,8 +272,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
           } catch (uploadErr) {
             // Registration succeeded but upload failed — show clear error, keep farmerSuccess set
             setUploadErrorMsg(
-              uploadErr.message ||
-              'पंजीकरण सफल हुआ, लेकिन दस्तावेज़ अपलोड विफल रहा। कृपया लॉगिन करके पुनः प्रयास करें। / Registration succeeded but document upload failed. Please retry after logging in.'
+              uploadErr.message || t('documentUploadFailed')
             )
           } finally {
             setUploadingDoc(false)
@@ -299,7 +304,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
       }
     } catch (err) {
       console.error('Registration submit error:', err)
-      setErrorMsg(err.message || 'पंजीकरण में विफलता। कृपया पुनः प्रयास करें। / Registration failed.')
+      setErrorMsg(err.message || t('registrationFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -313,7 +318,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
           <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
             <Sprout size={20} />
           </div>
-          <span className="font-bold text-lg text-emerald-950">Smart Mandi</span>
+          <span className="font-bold text-lg text-emerald-950">KisanMitra</span>
         </div>
         <LanguageSelector />
       </div>
@@ -329,7 +334,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
                   <Upload size={36} />
                 </div>
                 <h2 className="text-xl font-extrabold text-emerald-950">
-                  दस्तावेज़ अपलोड हो रहा है… / Uploading document…
+                  {t('uploadingDocument')}
                 </h2>
               </>
             ) : docSubmitted ? (
@@ -340,20 +345,20 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
                 </div>
                 <div className="space-y-2">
                   <h2 className="text-2xl font-extrabold text-emerald-950">
-                    दस्तावेज़ सफलतापूर्वक जमा किया गया / Document Submitted
+                    {t('documentSubmitted')}
                   </h2>
                   <p className="text-sm sm:text-base text-slate-600 max-w-md mx-auto font-medium">
-                    आपका खाता प्रशासन समीक्षा के बाद सक्रिय होगा
+                    {t('registrationPendingMsg')}
                   </p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm max-w-md mx-auto text-left space-y-1">
                   <p className="font-bold flex items-center gap-1.5">
                     <ShieldCheck size={18} className="text-emerald-700" />
-                    <span>स्थिति: दस्तावेज़ समीक्षा में (Document Under Review)</span>
+                    <span>{t('documentUnderReview')}</span>
                   </p>
                   <p className="text-emerald-800">
-                    नाम: <strong>{farmerSuccess.name}</strong> | मोबाइल: <strong>{farmerSuccess.mobile}</strong>
+                    {t('nameLabel')}: <strong>{farmerSuccess.name}</strong> | {t('mobileLabel')}: <strong>{farmerSuccess.mobile}</strong>
                   </p>
                 </div>
               </>
@@ -365,10 +370,10 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
                 </div>
                 <div className="space-y-2">
                   <h2 className="text-2xl font-extrabold text-emerald-950">
-                    पंजीकरण सफल, सत्यापन लंबित / Registration Successful
+                    {t('registrationPending')}
                   </h2>
                   <p className="text-sm sm:text-base text-slate-600 max-w-md mx-auto font-medium">
-                    खाता सक्रिय होने के बाद आप लॉगिन कर सकेंगे
+                    {t('registrationPendingMsg')}
                   </p>
                 </div>
 
@@ -382,10 +387,10 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
                 <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm max-w-md mx-auto text-left space-y-1">
                   <p className="font-bold flex items-center gap-1.5">
                     <ShieldCheck size={18} className="text-amber-700" />
-                    <span>सत्यापन स्थिति: लंबित (Pending Verification)</span>
+                    <span>{t('verificationPending')}</span>
                   </p>
                   <p className="text-amber-800">
-                    नाम: <strong>{farmerSuccess.name}</strong> | मोबाइल: <strong>{farmerSuccess.mobile}</strong>
+                    {t('nameLabel')}: <strong>{farmerSuccess.name}</strong> | {t('mobileLabel')}: <strong>{farmerSuccess.mobile}</strong>
                   </p>
                 </div>
               </>
@@ -394,7 +399,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
             {!uploadingDoc && (
               <div className="pt-4 flex justify-center">
                 <Button variant="primary" size="md" onClick={onSwitchToLogin}>
-                  <span>लॉगिन पृष्ठ पर जाएं / Go to Login</span>
+                  <span>{t('goToLogin')}</span>
                 </Button>
               </div>
             )}
@@ -407,21 +412,21 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-extrabold text-slate-900">
-                खरीदार पंजीकरण सफल! / Buyer Registration Successful!
+                {t('buyerRegSuccess')}
               </h2>
               <p className="text-sm sm:text-base text-slate-600 max-w-md mx-auto">
-                आपका खाता सक्रिय हो गया है और टोकन प्राप्त हो गया है।
+                {t('buyerRegSuccessMsg')}
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950 text-xs sm:text-sm max-w-md mx-auto text-left">
-              <p className="font-bold">कंपनी / नाम: {buyerSuccess.businessName || buyerSuccess.name}</p>
-              <p className="text-blue-800">मोबाइल: {buyerSuccess.mobile} | भूमिका: खरीदार</p>
+              <p className="font-bold">{t('nameLabel')}: {buyerSuccess.businessName || buyerSuccess.name}</p>
+              <p className="text-blue-800">{t('mobileLabel')}: {buyerSuccess.mobile} | {t('roleLabel')}: {t('buyerRole')}</p>
             </div>
 
             <div className="pt-4 flex justify-center gap-3">
               <Button variant="primary" size="md" onClick={onSwitchToLogin}>
-                <span>जारी रखें / Continue</span>
+                <span>{t('goToLogin')}</span>
               </Button>
             </div>
           </div>
@@ -444,10 +449,10 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
-                  चरण {currentStep} / {activeSteps.length}: {activeSteps[currentStep - 1]}
+                    {t('stepLabel')} {currentStep} {t('stepOf')} {activeSteps.length}: {activeSteps[currentStep - 1]}
                 </span>
                 <span className="text-xs font-semibold text-slate-500">
-                  {role === 'farmer' ? 'किसान पंजीकरण' : 'खरीदार पंजीकरण'}
+                  {role === 'farmer' ? t('farmerRegistration') : t('buyerRegistration')}
                 </span>
               </div>
               <div className="flex gap-1.5">
@@ -487,13 +492,13 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
                   {currentStep === 1 && (
                     <div className="space-y-5">
                       <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-2">
-                        चरण 1: नाम, मोबाइल व OTP सत्यापन
+                        {t('stepLabel')} 1: {t('stepMobileOtp')}
                       </h3>
 
                       {/* Full Name */}
                       <div className="space-y-1.5">
                         <label htmlFor="reg-farmer-name" className="block text-sm font-bold text-slate-800">
-                          पूरा नाम / Full Name <span className="text-emerald-600">*</span>
+                          {t('fullName')} <span className="text-emerald-600">*</span>
                         </label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -506,7 +511,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
                             disabled={submitting}
                             value={farmerForm.name}
                             onChange={(e) => setFarmerForm({ ...farmerForm, name: e.target.value })}
-                            placeholder="अपना पूरा नाम दर्ज करें"
+                            placeholder={t('fullNamePlaceholder')}
                             className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:bg-white"
                           />
                         </div>
@@ -515,7 +520,7 @@ export default function Register({ onSwitchToLogin, onFarmerRegistered, onBuyerR
                       {/* Mobile & Send OTP */}
                       <div className="space-y-1.5">
                         <label htmlFor="reg-farmer-mobile" className="block text-sm font-bold text-slate-800">
-                          मोबाइल नंबर / Mobile Number <span className="text-emerald-600">*</span>
+                          {t('mobileNumber')} <span className="text-emerald-600">*</span>
                         </label>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
